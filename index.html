@@ -1,0 +1,542 @@
+<!--
+Category: UI Shell
+File: index.html
+Description: Main HTML application layout with tabbed navigation, service HUD, and forms.
+Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Manager | Offline-First Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- App Main Wrapper -->
+  <div class="app-container">
+
+    <!-- Left Navigation Sidebar / Top Header (Responsive) -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">⚙️</span>
+        <div class="brand-text">
+          <h1>MOTO-TECH</h1>
+          <p>VEHICLE DEGRADATION TRACKER</p>
+        </div>
+      </div>
+
+      <nav id="main-nav" class="nav-links">
+        <button type="button" class="nav-btn active" data-view="view-dashboard">
+          <span class="btn-icon">📊</span> Dashboard
+        </button>
+        <button type="button" class="nav-btn" data-view="view-services">
+          <span class="btn-icon">🔧</span> Services Config
+        </button>
+        <button type="button" class="nav-btn" data-view="view-checklists">
+          <span class="btn-icon">📝</span> Routine Checks
+        </button>
+        <button type="button" class="nav-btn" data-view="view-settings">
+          <span class="btn-icon">⚙️</span> Settings
+        </button>
+      </nav>
+
+      <input type="file" id="input-import" accept=".json" style="display: none;">
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+
+      <!-- VIEW A: UNIFIED DASHBOARD -->
+      <section id="view-dashboard" class="view-section">
+
+        <!-- Scheduled Reminders Notification Panel -->
+        <div id="dashboard-notifications" class="notifications-area"></div>
+
+        <!-- Odometer HUD Component -->
+        <div id="odometer-hud" class="hud-card">
+          <!-- Dynamically Rendered HUD Contents -->
+          <div class="hud-loader">Loading HUD...</div>
+        </div>
+
+        <!-- Routine Actions Anchors -->
+        <div class="routines-hud">
+          <button type="button" id="btn-open-daily" class="routine-card-btn">
+            <span class="routine-icon">☀️</span>
+            <span class="routine-info">
+              <span class="h3-span">Daily Pre-Ride</span>
+              <span class="p-span">Critical checks before ignition</span>
+            </span>
+            <span class="arrow">→</span>
+          </button>
+
+          <button type="button" id="btn-open-weekly" class="routine-card-btn">
+            <span class="routine-icon">📅</span>
+            <span class="routine-info">
+              <span class="h3-span">Weekly Protocol</span>
+              <span class="p-span">Standard routine inspections</span>
+            </span>
+            <span class="arrow">→</span>
+          </button>
+
+          <button type="button" id="btn-open-monthly" class="routine-card-btn">
+            <span class="routine-icon">🌙</span>
+            <span class="routine-info">
+              <span class="h3-span">Monthly Protocol</span>
+              <span class="p-span">Deep physical inspections</span>
+            </span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+
+        <!-- Dynamic Service Component Trackers -->
+        <div class="section-header">
+          <h2>PART DEGRADATION TRACKERS</h2>
+          <span class="subtitle">Sorted by critical service priority</span>
+        </div>
+
+        <div id="service-cards" class="service-cards-grid">
+          <!-- Dynamically populated service cards -->
+          <div class="card-loader">Loading trackers...</div>
+        </div>
+      </section>
+
+      <!-- VIEW B: SERVICE CONFIGURATION PANEL -->
+      <section id="view-services" class="view-section" hidden>
+        <div class="config-grid">
+
+          <!-- Schema Registration Form -->
+          <div class="card form-card">
+            <h3>Add Maintenance Item</h3>
+            <p class="form-desc">Register a component to track its degradation cycle.</p>
+
+            <form id="form-add-service">
+              <div class="form-group">
+                <label for="add-name">Component / Service Name</label>
+                <input type="text" id="add-name" required placeholder="e.g., Engine Oil (Oli Mesin)">
+              </div>
+
+              <div class="form-group">
+                <label for="add-interval">Maintenance Interval (KM)</label>
+                <input type="number" id="add-interval" min="1" required placeholder="e.g., 4000">
+              </div>
+
+              <div class="form-group">
+                <label for="add-last-service">Last Serviced Odometer (KM)</label>
+                <input type="number" id="add-last-service" min="0" required placeholder="e.g., 12000">
+              </div>
+
+              <button type="submit" class="submit-btn">Register Component</button>
+            </form>
+          </div>
+
+          <!-- Services Data Table -->
+          <div class="card table-card">
+            <h3>Registered Components</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Component Name</th>
+                    <th scope="col">Interval</th>
+                    <th scope="col">Last Service</th>
+                    <th scope="col">Next Service</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="service-table">
+                  <!-- Dynamically populated table rows -->
+                  <tr><td colspan="5" class="table-empty">No components registered yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW C: RECURRENT CHECKLISTS -->
+      <section id="view-checklists" class="view-section" hidden>
+        <div class="checklists-container">
+
+          <!-- Daily checklist Card -->
+          <div class="card checklist-card" id="checklist-daily-card">
+            <div class="checklist-header">
+              <div class="header-title">
+                <span class="checklist-badge daily">DAILY</span>
+                <h2>Pre-Ride Safety</h2>
+              </div>
+              <button type="button" class="reset-btn" id="btn-reset-daily">Reset Checked</button>
+            </div>
+
+            <!-- Trigger for Adding Daily Check Item Modal -->
+            <button type="button" class="add-task-btn btn-add-routine-trigger" data-type="daily">
+              <span>+</span> Add Daily Task
+            </button>
+
+            <div id="daily-checklist" class="checklist-items">
+              <!-- Dynamically populated checklist items -->
+            </div>
+          </div>
+
+          <!-- Weekly checklist Card -->
+          <div class="card checklist-card" id="checklist-weekly-card">
+            <div class="checklist-header">
+              <div class="header-title">
+                <span class="checklist-badge weekly">WEEKLY</span>
+                <h2>Weekly Protocol</h2>
+              </div>
+              <button type="button" class="reset-btn" id="btn-reset-weekly">Reset Checked</button>
+            </div>
+
+            <!-- Trigger for Adding Weekly Check Item Modal -->
+            <button type="button" class="add-task-btn btn-add-routine-trigger" data-type="weekly">
+              <span>+</span> Add Weekly Task
+            </button>
+
+            <div id="weekly-checklist" class="checklist-items">
+              <!-- Dynamically populated checklist items -->
+            </div>
+          </div>
+
+          <!-- Monthly checklist Card -->
+          <div class="card checklist-card" id="checklist-monthly-card">
+            <div class="checklist-header">
+              <div class="header-title">
+                <span class="checklist-badge monthly">MONTHLY</span>
+                <h2>System Inspection</h2>
+              </div>
+              <button type="button" class="reset-btn" id="btn-reset-monthly">Reset Checked</button>
+            </div>
+
+            <!-- Trigger for Adding Monthly Check Item Modal -->
+            <button type="button" class="add-task-btn btn-add-routine-trigger" data-type="monthly">
+              <span>+</span> Add Monthly Task
+            </button>
+
+            <div id="monthly-checklist" class="checklist-items">
+              <!-- Dynamically populated checklist items -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW D: SETTINGS &amp; NOTIFICATIONS -->
+      <section id="view-settings" class="view-section" hidden>
+        <div class="section-header">
+          <h2>SETTINGS &amp; REMINDERS</h2>
+          <span class="subtitle">Set reminders to perform routine maintenance tasks</span>
+        </div>
+
+        <form id="form-settings" class="settings-form">
+          <!-- Daily Reminder Group -->
+          <div class="card settings-card">
+            <div class="settings-card-header">
+              <span class="checklist-badge daily">DAILY</span>
+              <h3>Daily Pre-Ride Reminder</h3>
+            </div>
+            <div class="settings-row">
+              <label class="switch-container">
+                <input type="checkbox" id="reminder-daily-enabled">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Enable Daily Reminder</span>
+              </label>
+            </div>
+            <div class="settings-row reminder-time-row" id="row-daily-time">
+              <label for="reminder-daily-time">Reminder Time</label>
+              <input type="time" id="reminder-daily-time">
+            </div>
+          </div>
+
+          <!-- Weekly Reminder Group -->
+          <div class="card settings-card">
+            <div class="settings-card-header">
+              <span class="checklist-badge weekly">WEEKLY</span>
+              <h3>Weekly Inspection Reminder</h3>
+            </div>
+            <div class="settings-row">
+              <label class="switch-container">
+                <input type="checkbox" id="reminder-weekly-enabled">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Enable Weekly Reminder</span>
+              </label>
+            </div>
+            <div class="settings-row-grid">
+              <div class="settings-row reminder-time-row" id="row-weekly-day">
+                <label for="reminder-weekly-day">Day of Week</label>
+                <select id="reminder-weekly-day">
+                  <option value="0">Sunday</option>
+                  <option value="1">Monday</option>
+                  <option value="2">Tuesday</option>
+                  <option value="3">Wednesday</option>
+                  <option value="4">Thursday</option>
+                  <option value="5">Friday</option>
+                  <option value="6">Saturday</option>
+                </select>
+              </div>
+              <div class="settings-row reminder-time-row" id="row-weekly-time">
+                <label for="reminder-weekly-time">Reminder Time</label>
+                <input type="time" id="reminder-weekly-time">
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Reminder Group -->
+          <div class="card settings-card">
+            <div class="settings-card-header">
+              <span class="checklist-badge monthly">MONTHLY</span>
+              <h3>Monthly Protocol Reminder</h3>
+            </div>
+            <div class="settings-row">
+              <label class="switch-container">
+                <input type="checkbox" id="reminder-monthly-enabled">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Enable Monthly Reminder</span>
+              </label>
+            </div>
+            <div class="settings-row-grid">
+              <div class="settings-row reminder-time-row" id="row-monthly-date">
+                <label for="reminder-monthly-date">Day of Month</label>
+                <input type="number" id="reminder-monthly-date" min="1" max="28" placeholder="1">
+              </div>
+              <div class="settings-row reminder-time-row" id="row-monthly-time">
+                <label for="reminder-monthly-time">Reminder Time</label>
+                <input type="time" id="reminder-monthly-time">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions-bar">
+            <button type="submit" class="action-btn submit-btn">Save Settings</button>
+          </div>
+        </form>
+
+        <!-- Data Management Accordion Card -->
+        <div class="card settings-card accordion-card" id="accordion-data-mgmt">
+          <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt">
+            <div class="accordion-title-wrap">
+              <span class="btn-icon">💾</span>
+              <h3 class="accordion-title">Backup &amp; Data Portability</h3>
+            </div>
+            <span class="accordion-arrow">▸</span>
+          </div>
+          <div class="settings-card-body accordion-body" hidden>
+            <p class="settings-card-description">Export your current data as a backup file, or restore from an existing JSON backup. Restoring will overwrite all local settings and database entries.</p>
+            <div class="data-mgmt-actions">
+              <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
+                <span>📤</span> Export Backup
+              </button>
+              <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
+                <span>📥</span> Import Backup
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone Accordion Card -->
+        <div class="card settings-card accordion-card danger-zone-card" id="accordion-danger-zone">
+          <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone">
+            <div class="accordion-title-wrap">
+              <span class="btn-icon">⚠️</span>
+              <h3 class="accordion-title danger-title">Danger Zone</h3>
+            </div>
+            <span class="accordion-arrow">▸</span>
+          </div>
+          <div class="settings-card-body accordion-body" hidden>
+            <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and configurations stored in this browser. This process cannot be undone.</p>
+            <div class="data-mgmt-actions">
+              <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
+                <span>🗑️</span> Delete All Data
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FLOATING MODAL OVERLAYS -->
+
+  <!-- Edit Service Modal -->
+  <div id="modal-edit" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Component Details</h3>
+        <button type="button" class="modal-close" id="btn-close-edit">&times;</button>
+      </div>
+      <form id="form-edit-service">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label for="edit-name">Component Name</label>
+          <input type="text" id="edit-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-interval">Maintenance Interval (KM)</label>
+          <input type="number" id="edit-interval" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-last-service">Last Serviced Odometer (KM)</label>
+          <input type="number" id="edit-last-service" min="0" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-edit">Cancel</button>
+          <button type="submit" class="action-btn submit-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Daily Checklist Modal -->
+  <div id="modal-daily" class="modal-overlay" hidden>
+    <div class="modal-card checklist-modal-card">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="checklist-badge daily">DAILY</span>
+          <h3>Pre-Ride Checklist</h3>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-daily-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-daily-list" class="checklist-items">
+          <!-- Cloned or rendered lists -->
+        </div>
+      </div>
+      <div class="modal-actions-bar">
+        <button type="button" class="reset-btn" id="btn-reset-daily-modal">Reset Checked</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-daily-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Checklist Modal -->
+  <div id="modal-weekly" class="modal-overlay" hidden>
+    <div class="modal-card checklist-modal-card">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="checklist-badge weekly">WEEKLY</span>
+          <h3>Weekly Inspection Protocol</h3>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-weekly-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-weekly-list" class="checklist-items">
+          <!-- Cloned or rendered lists -->
+        </div>
+      </div>
+      <div class="modal-actions-bar">
+        <button type="button" class="reset-btn" id="btn-reset-weekly-modal">Reset Checked</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-weekly-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Checklist Modal -->
+  <div id="modal-monthly" class="modal-overlay" hidden>
+    <div class="modal-card checklist-modal-card">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="checklist-badge monthly">MONTHLY</span>
+          <h3>Monthly Inspection Protocol</h3>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-monthly-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-monthly-list" class="checklist-items">
+          <!-- Cloned or rendered lists -->
+        </div>
+      </div>
+      <div class="modal-actions-bar">
+        <button type="button" class="reset-btn" id="btn-reset-monthly-modal">Reset Checked</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-monthly-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-Step Import Confirmation Modal -->
+  <div id="modal-import" class="modal-overlay" hidden>
+    <div class="modal-card confirmation-modal-card">
+      <div class="modal-header header-warning">
+        <h3>⚠️ Overwrite Existing Data?</h3>
+      </div>
+      <div class="modal-body warning-body">
+        <p>This action will permanently delete all current components, checklist items, and odometer values, replacing them with the imported backup file.</p>
+        <p class="warning-alert">This action cannot be undone.</p>
+
+        <div class="form-group confirm-input-group">
+          <label for="confirm-text-input">Type <strong>IMPORT</strong> in the field below to proceed:</label>
+          <input type="text" id="confirm-text-input" autocomplete="off" placeholder="IMPORT">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-cancel-import">Cancel</button>
+        <button type="button" class="action-btn danger-btn" id="btn-confirm-import" disabled>Confirm Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Routine Checklist Item Modal -->
+  <div id="modal-add-routine" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Routine Safety Check</h3>
+        <button type="button" class="modal-close" id="btn-close-add-routine">&times;</button>
+      </div>
+      <form id="form-add-routine">
+        <div class="form-group">
+          <label for="routine-type">Checklist Type</label>
+          <select id="routine-type" required>
+            <option value="daily">Daily Pre-Ride</option>
+            <option value="weekly">Weekly Protocol</option>
+            <option value="monthly">Monthly Inspection</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="routine-task">Task / Item Name</label>
+          <input type="text" id="routine-task" required placeholder="e.g., Brake Pads Thickness">
+        </div>
+        <div class="form-group">
+          <label for="routine-desc">Description (Supports Markdown)</label>
+          <textarea id="routine-desc" rows="4" placeholder="Describe how to inspect this item. Supports markdown, e.g.:
+**Verify** friction material thickness is >= 1.5mm.
+- Inspect using a flashlight.
+- Look from behind the caliper."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-add-routine">Cancel</button>
+          <button type="submit" class="action-btn submit-btn">Add Routine Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Data Confirmation Modal -->
+  <div id="modal-delete-confirm" class="modal-overlay" hidden>
+    <div class="modal-card confirmation-modal-card">
+      <div class="modal-header header-danger">
+        <h3>⚠️ Wipe Browser Data</h3>
+      </div>
+      <div class="modal-body warning-body">
+        <p>This action will permanently delete all vehicle records, customized checklists, and configurations stored in this browser.</p>
+        <p class="warning-alert">Please type <strong>DELETE</strong> in the box below to unlock the action:</p>
+        <input type="text" id="delete-text-input" placeholder="Type DELETE here" class="text-confirm-input">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-cancel-delete">Cancel</button>
+        <button type="button" class="action-btn danger-btn" id="btn-confirm-delete" disabled>Wipe Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Containers -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Script Declarations -->
+  <script src="js/db.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

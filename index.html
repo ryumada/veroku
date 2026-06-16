@@ -6,12 +6,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Manager | Offline-First Dashboard</title>
+  <title>Veroku | Vehicle Degradation Tracker</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
 
   <!-- App Main Wrapper -->
@@ -22,9 +25,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
       <div class="brand">
         <span class="brand-icon">⚙️</span>
         <div class="brand-text">
-          <h1>MOTO-TECH</h1>
+          <h1>VEROKU</h1>
           <p>VEHICLE DEGRADATION TRACKER</p>
         </div>
+        <button type="button" id="btn-theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Theme">🌙</button>
       </div>
 
       <nav id="main-nav" class="nav-links">
@@ -123,6 +127,13 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
               </div>
 
               <div class="form-group">
+                <label for="add-warning-threshold">Warning Threshold (KM) <span class="lbl-desc">(e.g. warn at 3000 KM
+                    for a 3500 KM target)</span></label>
+                <input type="number" id="add-warning-threshold" min="0"
+                  placeholder="e.g., 3000 (Defaults to 200 KM remaining)">
+              </div>
+
+              <div class="form-group">
                 <label for="add-last-service">Last Serviced Odometer (KM)</label>
                 <input type="number" id="add-last-service" min="0" required placeholder="e.g., 12000">
               </div>
@@ -140,16 +151,53 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                   <tr>
                     <th scope="col">Component Name</th>
                     <th scope="col">Interval</th>
+                    <th scope="col">Warning At</th>
                     <th scope="col">Last Service</th>
-                    <th scope="col">Next Service</th>
+                    <th scope="col">Next Due</th>
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="service-table">
                   <!-- Dynamically populated table rows -->
-                  <tr><td colspan="5" class="table-empty">No components registered yet.</td></tr>
+                  <tr>
+                    <td colspan="6" class="table-empty">No components registered yet.</td>
+                  </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Cost Summary Card -->
+          <div class="card cost-summary-card">
+            <h3>Cost Summary</h3>
+            <p class="form-desc">Total spending on vehicle maintenance.</p>
+            <div id="cost-summary-content">
+              <!-- Dynamically populated total cost & component costs list -->
+            </div>
+          </div>
+
+          <!-- Service History Card -->
+          <div class="card service-history-card">
+            <h3>Service Log History</h3>
+            <p class="form-desc">Logs of completed services and inspections.</p>
+            <!-- Service History Date Navigation Controls -->
+            <div class="history-nav-bar">
+              <div class="history-filter-toggles">
+                <button type="button" id="btn-history-monthly" class="nav-btn-sm active">Monthly</button>
+                <button type="button" id="btn-history-yearly" class="nav-btn-sm">Yearly</button>
+              </div>
+              <div class="history-date-nav">
+                <button type="button" id="btn-history-prev" class="nav-btn-arrow">◀</button>
+                <span id="history-date-display" class="history-date-label">June 2026</span>
+                <button type="button" id="btn-history-next" class="nav-btn-arrow">▶</button>
+                <button type="button" id="btn-history-now" class="nav-btn-sm btn-now">Now</button>
+              </div>
+            </div>
+
+            <div class="scrollable-y">
+              <div id="service-history-list" class="history-timeline-list">
+                <!-- Dynamically populated service history list -->
+              </div>
             </div>
           </div>
 
@@ -230,7 +278,41 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <span class="subtitle">Set reminders to perform routine maintenance tasks</span>
         </div>
 
-        <form id="form-settings" class="settings-form">
+        <div class="settings-content-wrapper">
+          <form id="form-settings" class="settings-form">
+          <!-- Active Vehicle Profile Selector -->
+          <div class="card settings-card">
+            <div class="settings-card-header">
+              <span class="checklist-badge weekly">VEHICLE</span>
+              <h3>Active Vehicle Profile</h3>
+            </div>
+            <div class="settings-row">
+              <span class="switch-label">Select the active vehicle profile to display on the dashboard:</span>
+              <div class="vehicle-selector-bar">
+                <select id="select-vehicle" class="vehicle-dropdown"></select>
+                <div class="vehicle-actions-dropdown">
+                  <button type="button" id="btn-vehicle-actions-trigger"
+                    class="action-btn outline-btn dropdown-trigger-btn" title="Vehicle Actions">
+                    <span>☰</span>
+                  </button>
+                  <div id="vehicle-actions-menu" class="dropdown-menu-content" hidden>
+                    <button type="button" id="btn-edit-vehicle-trigger" class="dropdown-menu-item">
+                      <span>✏️</span> Edit Vehicle
+                    </button>
+                    <button type="button" id="btn-delete-vehicle-trigger" class="dropdown-menu-item item-danger">
+                      <span>🗑️</span> Delete Vehicle
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button" id="btn-add-vehicle-trigger" class="action-btn outline-btn add-veh-btn"
+                  title="Add Vehicle">
+                  <span>➕</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Daily Reminder Group -->
           <div class="card settings-card">
             <div class="settings-card-header">
@@ -313,6 +395,24 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           </div>
         </form>
 
+        <!-- Load Example Data Card -->
+        <div class="card settings-card" id="card-example-data" hidden>
+          <div class="settings-card-header">
+            <span class="checklist-badge daily">DEMO</span>
+            <h3>Load Example Data</h3>
+          </div>
+          <div class="settings-card-body">
+            <p class="settings-card-description">This vehicle profile currently has no maintenance items. Load the
+              standard Honda CB150 Verza maintenance schedule and daily/weekly safety checks to populate the dashboard.
+            </p>
+            <div class="example-data-actions">
+              <button type="button" id="btn-load-example-data" class="action-btn submit-btn">
+                ⚡ Load Example Data
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Data Management Accordion Card -->
         <div class="card settings-card accordion-card" id="accordion-data-mgmt">
           <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt">
@@ -323,7 +423,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <span class="accordion-arrow">▸</span>
           </div>
           <div class="settings-card-body accordion-body" hidden>
-            <p class="settings-card-description">Export your current data as a backup file, or restore from an existing JSON backup. Restoring will overwrite all local settings and database entries.</p>
+            <p class="settings-card-description">Export your current data as a backup file, or restore from an existing
+              JSON backup. Restoring will overwrite all local settings and database entries.</p>
             <div class="data-mgmt-actions">
               <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
                 <span>📤</span> Export Backup
@@ -345,13 +446,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <span class="accordion-arrow">▸</span>
           </div>
           <div class="settings-card-body accordion-body" hidden>
-            <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and configurations stored in this browser. This process cannot be undone.</p>
+            <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and
+              configurations stored in this browser. This process cannot be undone.</p>
             <div class="data-mgmt-actions">
               <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
                 <span>🗑️</span> Delete All Data
               </button>
             </div>
           </div>
+        </div>
         </div>
       </section>
 
@@ -376,6 +479,12 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         <div class="form-group">
           <label for="edit-interval">Maintenance Interval (KM)</label>
           <input type="number" id="edit-interval" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-warning-threshold">Warning Threshold (KM) <span class="lbl-desc">(e.g. warn at 3000 KM for a
+              3500 KM target)</span></label>
+          <input type="number" id="edit-warning-threshold" min="0"
+            placeholder="e.g., 3000 (Defaults to 200 KM remaining)">
         </div>
         <div class="form-group">
           <label for="edit-last-service">Last Serviced Odometer (KM)</label>
@@ -462,7 +571,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         <h3>⚠️ Overwrite Existing Data?</h3>
       </div>
       <div class="modal-body warning-body">
-        <p>This action will permanently delete all current components, checklist items, and odometer values, replacing them with the imported backup file.</p>
+        <p>This action will permanently delete all current components, checklist items, and odometer values, replacing
+          them with the imported backup file.</p>
         <p class="warning-alert">This action cannot be undone.</p>
 
         <div class="form-group confirm-input-group">
@@ -503,6 +613,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 **Verify** friction material thickness is >= 1.5mm.
 - Inspect using a flashlight.
 - Look from behind the caliper."></textarea>
+          <div class="markdown-guide-hint">
+            <strong>Formatting supported:</strong>
+            <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, <code>- bullets</code>
+          </div>
         </div>
         <div class="modal-actions">
           <button type="button" class="action-btn outline-btn" id="btn-cancel-add-routine">Cancel</button>
@@ -519,13 +633,156 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         <h3>⚠️ Wipe Browser Data</h3>
       </div>
       <div class="modal-body warning-body">
-        <p>This action will permanently delete all vehicle records, customized checklists, and configurations stored in this browser.</p>
+        <p>This action will permanently delete all vehicle records, customized checklists, and configurations stored in
+          this browser.</p>
         <p class="warning-alert">Please type <strong>DELETE</strong> in the box below to unlock the action:</p>
         <input type="text" id="delete-text-input" placeholder="Type DELETE here" class="text-confirm-input">
       </div>
       <div class="modal-actions">
         <button type="button" class="action-btn outline-btn" id="btn-cancel-delete">Cancel</button>
         <button type="button" class="action-btn danger-btn" id="btn-confirm-delete" disabled>Wipe Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Log cost-confirmation Modal -->
+  <div id="modal-service-log" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Log Component Service</h3>
+        <button type="button" class="modal-close" id="btn-close-service-log">&times;</button>
+      </div>
+      <form id="form-service-log">
+        <input type="hidden" id="log-service-id">
+        <div class="form-group">
+          <label for="log-service-name">Component</label>
+          <input type="text" id="log-service-name" readonly class="readonly-input">
+        </div>
+        <div class="form-group">
+          <label for="log-service-cost">Maintenance Cost (IDR / USD) <span class="required-asterisk">*</span></label>
+          <input type="number" id="log-service-cost" required min="0" placeholder="e.g. 50000"
+            class="confirm-cost-input">
+        </div>
+        <div class="form-group">
+          <label for="log-service-notes">Service Notes</label>
+          <textarea id="log-service-notes"
+            placeholder="Describe the service details (e.g. brand, specification)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-service-log">Cancel</button>
+          <button type="submit" class="action-btn submit-btn" id="btn-confirm-service-log">Complete Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Odometer History Modal -->
+  <div id="modal-odometer-history" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Odometer History Log</h3>
+        <button type="button" class="modal-close" id="btn-close-odo-history">&times;</button>
+      </div>
+      <div class="modal-body history-body scrollable-y">
+        <div id="odo-history-list" class="history-timeline-list">
+          <!-- Dynamically populated entries -->
+        </div>
+      </div>
+      <!-- Pagination Controls -->
+      <div class="pagination-bar" id="odo-history-pagination">
+        <button type="button" id="btn-odo-prev" class="nav-btn-arrow">◀</button>
+        <span id="odo-page-display" class="odo-page-label">Page 1 of 1</span>
+        <button type="button" id="btn-odo-next" class="nav-btn-arrow">▶</button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-close-odo-history-footer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Vehicle Modal -->
+  <div id="modal-add-vehicle" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add New Vehicle</h3>
+        <button type="button" class="modal-close" id="btn-close-add-vehicle">&times;</button>
+      </div>
+      <form id="form-add-vehicle">
+        <div class="form-group">
+          <label for="new-vehicle-name">Vehicle Name</label>
+          <input type="text" id="new-vehicle-name" required placeholder="e.g., Honda CB150 Verza">
+        </div>
+        <div class="form-group">
+          <label for="new-vehicle-icon">Emoji Icon</label>
+          <input type="text" id="new-vehicle-icon" required value="🏍️" placeholder="e.g., 🚗, 🏍️, 🚲"
+            class="emoji-icon-input">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-add-vehicle">Cancel</button>
+          <button type="submit" class="action-btn submit-btn">Create Vehicle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Vehicle Modal -->
+  <div id="modal-edit-vehicle" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Vehicle Profile</h3>
+        <button type="button" class="modal-close" id="btn-close-edit-vehicle">&times;</button>
+      </div>
+      <form id="form-edit-vehicle">
+        <div class="form-group">
+          <label for="edit-vehicle-name">Vehicle Name <span class="required-asterisk">*</span></label>
+          <input type="text" id="edit-vehicle-name" required placeholder="e.g. My Honda CB150 Verza">
+        </div>
+        <div class="form-group">
+          <label for="edit-vehicle-icon">Emoji Icon <span class="required-asterisk">*</span></label>
+          <input type="text" id="edit-vehicle-icon" required value="🏍️" placeholder="e.g., 🚗, 🏍️, 🚲"
+            class="emoji-icon-input">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-edit-vehicle">Cancel</button>
+          <button type="submit" class="action-btn submit-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Vehicle Confirmation Modal -->
+  <div id="modal-delete-vehicle-confirm" class="modal-overlay" hidden>
+    <div class="modal-card confirmation-modal-card">
+      <div class="modal-header header-danger">
+        <h3>⚠️ Delete Vehicle Profile</h3>
+      </div>
+      <div class="modal-body warning-body">
+        <p>This action will permanently delete the selected vehicle profile, including all of its parts trackers,
+          checklist histories, and mileage logs.</p>
+        <p class="warning-alert">Please type <strong>DELETE VEHICLE</strong> in the box below to unlock the action:</p>
+        <input type="text" id="delete-vehicle-text-input" placeholder="Type DELETE VEHICLE here"
+          class="text-confirm-input">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-cancel-delete-vehicle">Cancel</button>
+        <button type="button" class="action-btn danger-btn" id="btn-confirm-delete-vehicle" disabled>Delete
+          Vehicle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routine Description View Modal -->
+  <div id="modal-routine-desc-view" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="routine-desc-title">Routine Details</h3>
+        <button type="button" class="modal-close" id="btn-close-routine-desc-view">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="routine-desc-body" class="markdown-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-close-routine-desc-view-footer">Close</button>
       </div>
     </div>
   </div>
@@ -539,4 +796,5 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>

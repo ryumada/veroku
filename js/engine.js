@@ -28,16 +28,24 @@ function computeRemainingDelta(currentOdometer, nextOdometer) {
 /**
  * Classify the remaining delta into a functional status category.
  * @param {number} deltaRemaining
+ * @param {number} intervalKm
+ * @param {number} [warningThreshold] e.g. warn at 3000 KM for a 3500 KM target
  * @returns {{label: string, emoji: string, cssClass: string}}
  */
-function classifyStatus(deltaRemaining) {
+function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
   if (deltaRemaining <= 0) {
     return {
       label: '🚨 OVERDUE!',
       emoji: '🚨',
       cssClass: 'status--critical'
     };
-  } else if (deltaRemaining <= 200) {
+  }
+  
+  const warningLimit = warningThreshold !== undefined && warningThreshold > 0
+    ? Math.max(0, intervalKm - warningThreshold)
+    : 200;
+
+  if (deltaRemaining <= warningLimit) {
     return {
       label: '⚠️ Due Soon',
       emoji: '⚠️',
@@ -63,7 +71,7 @@ function computeAllServices(services, currentOdometer) {
   return services.map(service => {
     const nextOdometer = computeNextOdometer(service.last_service_odometer, service.interval_km);
     const deltaRemaining = computeRemainingDelta(currentOdometer, nextOdometer);
-    const status = classifyStatus(deltaRemaining);
+    const status = classifyStatus(deltaRemaining, service.interval_km, service.warning_threshold);
     return {
       ...service,
       nextOdometer,
@@ -98,4 +106,82 @@ function sortByPriority(enrichedServices) {
     // Within the same status, sort by deltaRemaining ascending (closest to limit first)
     return a.deltaRemaining - b.deltaRemaining;
   });
+}
+
+/**
+ * Calculate cost aggregation from service history.
+ * @param {Array<object>} history
+ * @returns {{total: number, perService: object}}
+ */
+function computeCostSummary(history) {
+  const summary = { total: 0, perService: {} };
+  if (!Array.isArray(history)) return summary;
+  
+  history.forEach(item => {
+    const cost = Number(item.cost) || 0;
+    summary.total += cost;
+    if (item.service_id) {
+      summary.perService[item.service_id] = (summary.perService[item.service_id] || 0) + cost;
+    }
+  });
+  
+  return summary;
+}
+
+/**
+ * Compute average daily mileage based on odometer history.
+ * @param {Array<object>} log
+ * @returns {number} Average daily km
+ */
+function computeDailyAvgMileage(log) {
+  if (!Array.isArray(log) || log.length < 2) return 0;
+  
+  // Sort log by timestamp ascending
+  const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  
+  const odoDiff = (last.odometer || 0) - (first.odometer || 0);
+  const timeDiffMs = last.timestamp - first.timestamp;
+  const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24);
+  
+  if (timeDiffDays < 0.1 || odoDiff <= 0) return 0;
+  
+  return Number((odoDiff / timeDiffDays).toFixed(1));
+}
+
+/**
+ * Update daily check completion streak count.
+ * @param {object} meta
+ * @param {Array<object>} dailyChecks
+ * @returns {object} updated streak metadata properties
+ */
+function computeStreakUpdate(meta, dailyChecks) {
+  const updated = {
+    streak_days: meta.streak_days || 0,
+    streak_last_completed_date: meta.streak_last_completed_date || ''
+  };
+  
+  if (!Array.isArray(dailyChecks) || dailyChecks.length === 0) return updated;
+  
+  const allChecked = dailyChecks.every(c => c.checked);
+  if (!allChecked) return updated;
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (updated.streak_last_completed_date === todayStr) {
+    return updated; // Already logged today
+  }
+  
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  if (updated.streak_last_completed_date === yesterdayStr) {
+    updated.streak_days += 1;
+  } else {
+    updated.streak_days = 1;
+  }
+  updated.streak_last_completed_date = todayStr;
+  
+  return updated;
 }

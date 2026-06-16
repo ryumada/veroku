@@ -5,20 +5,35 @@
  * @requires None
  */
 
-const STORAGE_KEY = 'v_manager_db';
+const STORAGE_KEY = 'v_manager_db_v2';
 
 const DEFAULT_STATE = {
-  meta: {
-    current_odometer: 0,
-    last_updated_timestamp: 0
-  },
-  services: [],
-  routine_checks: {
-    daily: [],
-    weekly: [],
-    monthly: []
+  active_vehicle_id: 'v-1',
+  vehicles: {
+    'v-1': {
+      id: 'v-1',
+      name: 'My Vehicle',
+      icon: '🏍️',
+      meta: {
+        current_odometer: 0,
+        last_updated_timestamp: 0,
+        daily_reset_date: '',
+        weekly_reset_week: '',
+        streak_days: 0,
+        streak_last_completed_date: ''
+      },
+      services: [],
+      routine_checks: {
+        daily: [],
+        weekly: [],
+        monthly: []
+      },
+      service_history: [],
+      odometer_log: []
+    }
   },
   settings: {
+    theme: 'dark',
     reminders: {
       daily: { enabled: false, time: '08:00' },
       weekly: { enabled: false, day: 0, time: '09:00' },
@@ -37,6 +52,128 @@ function generateId(prefix) {
 }
 
 /**
+ * Get ISO week string for date comparison.
+ * @param {Date} date
+ * @returns {string}
+ */
+function getISOWeekString(date) {
+  const tempDate = new Date(date.valueOf());
+  const dayNum = (date.getDay() + 6) % 7;
+  tempDate.setDate(tempDate.getDate() - dayNum + 3);
+  const firstThursday = tempDate.valueOf();
+  tempDate.setMonth(0, 1);
+  if (tempDate.getDay() !== 4) {
+    tempDate.setMonth(0, 1 + ((4 - tempDate.getDay() + 7) % 7));
+  }
+  const weekNum = 1 + Math.ceil((firstThursday - tempDate) / 604800000);
+  return `${tempDate.getFullYear()}-W${weekNum}`;
+}
+
+/**
+ * Retrieve active vehicle profile.
+ * @param {object} state
+ * @returns {object}
+ */
+function getActiveVehicle(state) {
+  const activeId = state.active_vehicle_id || 'v-1';
+  if (!state.vehicles) state.vehicles = {};
+  if (!state.vehicles[activeId]) {
+    state.vehicles[activeId] = {
+      id: activeId,
+      name: 'My Vehicle',
+      icon: '🏍️',
+      meta: {
+        current_odometer: 0,
+        last_updated_timestamp: 0,
+        daily_reset_date: '',
+        weekly_reset_week: '',
+        streak_days: 0,
+        streak_last_completed_date: ''
+      },
+      services: [],
+      routine_checks: {
+        daily: [],
+        weekly: [],
+        monthly: []
+      },
+      service_history: [],
+      odometer_log: []
+    };
+  }
+  return state.vehicles[activeId];
+}
+
+/**
+ * Add a new vehicle profile to the state.
+ * @param {object} state
+ * @param {string} name
+ * @param {string} icon
+ * @returns {string} The new vehicle profile ID
+ */
+function addVehicleProfile(state, name, icon) {
+  const newId = generateId('v');
+  if (!state.vehicles) state.vehicles = {};
+  state.vehicles[newId] = {
+    id: newId,
+    name: name,
+    icon: icon || '🏍️',
+    meta: {
+      current_odometer: 0,
+      last_updated_timestamp: Date.now(),
+      daily_reset_date: '',
+      weekly_reset_week: '',
+      streak_days: 0,
+      streak_last_completed_date: ''
+    },
+    services: [],
+    routine_checks: {
+      daily: [],
+      weekly: [],
+      monthly: []
+    },
+    service_history: [],
+    odometer_log: [
+      { odometer: 0, timestamp: Date.now() }
+    ]
+  };
+  state.active_vehicle_id = newId;
+  return newId;
+}
+
+/**
+ * Update active vehicle profile name and icon.
+ * @param {object} state
+ * @param {string} name
+ * @param {string} icon
+ */
+function updateActiveVehicleProfile(state, name, icon) {
+  const activeVeh = getActiveVehicle(state);
+  activeVeh.name = name;
+  activeVeh.icon = icon || '🏍️';
+}
+
+/**
+ * Delete the active vehicle profile.
+ * @param {object} state
+ * @returns {boolean} Whether deletion succeeded
+ */
+function deleteActiveVehicleProfile(state) {
+  const activeId = state.active_vehicle_id || 'v-1';
+  const vids = Object.keys(state.vehicles || {});
+  
+  if (vids.length <= 1) {
+    return false;
+  }
+  
+  delete state.vehicles[activeId];
+  
+  // Pick another active vehicle ID
+  const remainingVids = Object.keys(state.vehicles);
+  state.active_vehicle_id = remainingVids[0];
+  return true;
+}
+
+/**
  * Fetch the application state from local storage.
  * @returns {object}
  */
@@ -47,16 +184,13 @@ function getAppState() {
       return JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
     const parsed = JSON.parse(rawData);
-    // Deep merge with defaults to ensure missing sections are present
+    
+    // Deep merge to ensure compatibility and default settings structure
     const state = {
-      meta: { ...DEFAULT_STATE.meta, ...parsed.meta },
-      services: parsed.services || [],
-      routine_checks: {
-        daily: parsed.routine_checks?.daily || [],
-        weekly: parsed.routine_checks?.weekly || [],
-        monthly: parsed.routine_checks?.monthly || []
-      },
+      active_vehicle_id: parsed.active_vehicle_id || DEFAULT_STATE.active_vehicle_id,
+      vehicles: parsed.vehicles || DEFAULT_STATE.vehicles,
       settings: {
+        theme: parsed.settings?.theme || DEFAULT_STATE.settings.theme,
         reminders: {
           daily: {
             enabled: parsed.settings?.reminders?.daily?.enabled ?? DEFAULT_STATE.settings.reminders.daily.enabled,
@@ -75,6 +209,33 @@ function getAppState() {
         }
       }
     };
+
+    // Auto reset check
+    const activeVeh = getActiveVehicle(state);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const thisWeekStr = getISOWeekString(new Date());
+
+    let stateChanged = false;
+    if (activeVeh.meta.daily_reset_date !== todayStr) {
+      if (Array.isArray(activeVeh.routine_checks.daily)) {
+        activeVeh.routine_checks.daily.forEach(c => c.checked = false);
+      }
+      activeVeh.meta.daily_reset_date = todayStr;
+      stateChanged = true;
+    }
+
+    if (activeVeh.meta.weekly_reset_week !== thisWeekStr) {
+      if (Array.isArray(activeVeh.routine_checks.weekly)) {
+        activeVeh.routine_checks.weekly.forEach(c => c.checked = false);
+      }
+      activeVeh.meta.weekly_reset_week = thisWeekStr;
+      stateChanged = true;
+    }
+
+    if (stateChanged) {
+      saveAppState(state);
+    }
+
     return state;
   } catch (e) {
     console.error('Error reading from localStorage, resetting to defaults.', e);
@@ -122,7 +283,6 @@ function exportData() {
   document.body.appendChild(a);
   a.click();
   
-  // Clean up
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -144,46 +304,24 @@ function importData(file) {
       try {
         const parsed = JSON.parse(event.target.result);
         
-        // Schema Validation
         if (!parsed || typeof parsed !== 'object') {
           resolve({ ok: false, error: 'Invalid JSON file: Content must be a JSON object.' });
           return;
         }
         
-        if (!parsed.meta || typeof parsed.meta !== 'object') {
-          resolve({ ok: false, error: 'Invalid schema: Missing metadata.' });
+        if (!parsed.active_vehicle_id || !parsed.vehicles || typeof parsed.vehicles !== 'object') {
+          resolve({ ok: false, error: 'Invalid schema: Missing multi-vehicle structures.' });
           return;
         }
         
-        if (typeof parsed.meta.current_odometer !== 'number') {
-          resolve({ ok: false, error: 'Invalid schema: current_odometer must be a number.' });
-          return;
-        }
-        
-        if (!Array.isArray(parsed.services)) {
-          resolve({ ok: false, error: 'Invalid schema: services must be an array.' });
-          return;
-        }
-        
-        // Validate each service structure
-        for (const s of parsed.services) {
-          if (!s.id || typeof s.name !== 'string' || typeof s.interval_km !== 'number' || typeof s.last_service_odometer !== 'number') {
-            resolve({ ok: false, error: 'Invalid schema: Each service must contain id, name, interval_km (number), and last_service_odometer (number).' });
+        for (const vid in parsed.vehicles) {
+          const veh = parsed.vehicles[vid];
+          if (!veh.id || !veh.name || !veh.meta || !Array.isArray(veh.services) || !veh.routine_checks) {
+            resolve({ ok: false, error: `Invalid schema inside vehicle profile: ${vid}` });
             return;
           }
         }
         
-        if (!parsed.routine_checks || typeof parsed.routine_checks !== 'object') {
-          resolve({ ok: false, error: 'Invalid schema: Missing routine_checks object.' });
-          return;
-        }
-        
-        if (!Array.isArray(parsed.routine_checks.daily) || !Array.isArray(parsed.routine_checks.monthly)) {
-          resolve({ ok: false, error: 'Invalid schema: routine_checks must contain daily and monthly arrays.' });
-          return;
-        }
-        
-        // Successful validation
         saveAppState(parsed);
         resolve({ ok: true });
       } catch (e) {
@@ -200,12 +338,29 @@ function importData(file) {
 /**
  * Mark a service as completed, updating its last_service_odometer to current odometer.
  * @param {string} serviceId
+ * @param {number} cost
+ * @param {string} notes
  */
-function markServiceDone(serviceId) {
+function markServiceDone(serviceId, cost, notes) {
   const state = getAppState();
-  const service = state.services.find(s => s.id === serviceId);
+  const vehicle = getActiveVehicle(state);
+  const service = vehicle.services.find(s => s.id === serviceId);
   if (service) {
-    service.last_service_odometer = state.meta.current_odometer;
+    service.last_service_odometer = vehicle.meta.current_odometer;
+    
+    if (!vehicle.service_history) {
+      vehicle.service_history = [];
+    }
+    vehicle.service_history.push({
+      id: generateId('sh'),
+      service_id: serviceId,
+      service_name: service.name,
+      odometer_at_service: vehicle.meta.current_odometer,
+      cost: Number(cost) || 0,
+      timestamp: Date.now(),
+      notes: notes || ''
+    });
+    
     saveAppState(state);
   }
 }

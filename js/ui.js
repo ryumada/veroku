@@ -50,12 +50,17 @@ function showToast(message, type = 'success') {
  * Render the Odometer HUD block at the top of Dashboard.
  * @param {object} state
  */
+/**
+ * Render the Odometer HUD block at the top of Dashboard.
+ * @param {object} state
+ */
 function renderOdometerHUD(state) {
   const container = document.getElementById('odometer-hud');
   if (!container) return;
 
-  const currentOdo = state.meta.current_odometer || 0;
-  const lastUpdated = state.meta.last_updated_timestamp;
+  const activeVeh = getActiveVehicle(state);
+  const currentOdo = activeVeh.meta.current_odometer || 0;
+  const lastUpdated = activeVeh.meta.last_updated_timestamp;
   const timeString = lastUpdated 
     ? new Date(lastUpdated).toLocaleString() 
     : 'Never updated';
@@ -66,9 +71,24 @@ function renderOdometerHUD(state) {
     digitsHTML += `<span class="digit">${char}</span>`;
   }
 
+  const streak = activeVeh.meta.streak_days || 0;
+  const streakHtml = streak > 0 ? `<div class="streak-badge">🔥 ${streak} Day Streak</div>` : '';
+
+  const chartHtml = `
+    <div class="mileage-chart-container">
+      <div class="mileage-chart-title-bar">
+        <span class="mileage-chart-title">Mileage Growth (Last 14 Logs)</span>
+        <button type="button" id="btn-trigger-odo-history" class="btn-view-history">View All Logs</button>
+      </div>
+      <div id="chart-svg-wrapper">
+        ${generateSvgChart(activeVeh.odometer_log || [])}
+      </div>
+    </div>
+  `;
+
   container.innerHTML = `
     <div class="hud-reading">
-      <span class="hud-label">Current Odometer</span>
+      <span class="hud-label">${activeVeh.icon || '🏍️'} ${activeVeh.name || 'Vehicle'} - Current Odometer</span>
       <div class="hud-odometer-wrap">
         <div class="hud-odometer-digits">
           ${digitsHTML}
@@ -76,6 +96,7 @@ function renderOdometerHUD(state) {
         <span class="hud-unit">KM</span>
       </div>
       <div class="hud-timestamp">Last Synced: ${timeString}</div>
+      ${streakHtml}
     </div>
     <div class="hud-input-panel">
       <label for="input-hud-odo">Update Log Reading (KM)</label>
@@ -84,14 +105,18 @@ function renderOdometerHUD(state) {
         <button type="submit" title="Submit new Odometer reading">LOG</button>
       </form>
     </div>
+    <div style="width: 100%; flex-basis: 100%;">
+      ${chartHtml}
+    </div>
   `;
 }
 
 /**
  * Render maintenance parts tracker cards.
  * @param {Array<object>} enrichedServices
+ * @param {object} activeVeh
  */
-function renderServiceCards(enrichedServices) {
+function renderServiceCards(enrichedServices, activeVeh) {
   const container = document.getElementById('service-cards');
   if (!container) return;
 
@@ -109,6 +134,8 @@ function renderServiceCards(enrichedServices) {
     return;
   }
 
+  const avgMileage = computeDailyAvgMileage(activeVeh ? activeVeh.odometer_log : []);
+
   let html = '';
   enrichedServices.forEach(s => {
     const isCritical = s.status.cssClass === 'status--critical';
@@ -119,6 +146,16 @@ function renderServiceCards(enrichedServices) {
       deltaText = `${Math.abs(s.deltaRemaining)} KM OVERDUE`;
     } else {
       deltaText = `${s.deltaRemaining} KM Remaining`;
+    }
+
+    let forecastHtml = '';
+    if (avgMileage > 0 && s.deltaRemaining > 0) {
+      const daysUntil = Math.max(0, Math.ceil(s.deltaRemaining / avgMileage));
+      forecastHtml = `<div class="forecast-label">⏳ Est. ${daysUntil} days remaining (~${avgMileage} KM/day)</div>`;
+    } else if (s.deltaRemaining <= 0) {
+      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due! Service immediately.</div>`;
+    } else {
+      forecastHtml = `<div class="forecast-label">⏳ Forecast requires at least 2 odometer readings</div>`;
     }
 
     html += `
@@ -132,6 +169,7 @@ function renderServiceCards(enrichedServices) {
           <div class="tracker-remaining">
             <span class="tracker-remaining-header">Maintenance Delta</span>
             <span class="tracker-remaining-value">${deltaText}</span>
+            ${forecastHtml}
           </div>
           
           <div class="tracker-stat">
@@ -172,7 +210,7 @@ function renderServiceTable(state) {
   if (services.length === 0) {
     container.innerHTML = `
       <tr>
-        <td colspan="5" class="table-empty">No components registered yet. Start adding items above.</td>
+        <td colspan="6" class="table-empty">No components registered yet. Start adding items above.</td>
       </tr>
     `;
     return;
@@ -181,10 +219,12 @@ function renderServiceTable(state) {
   let html = '';
   services.forEach(s => {
     const nextKm = s.last_service_odometer + s.interval_km;
+    const warnKmText = s.warning_threshold ? `${s.warning_threshold} KM` : 'Default';
     html += `
       <tr>
         <td><strong>${s.name}</strong></td>
         <td class="cell-display">${s.interval_km} KM</td>
+        <td class="cell-display">${warnKmText}</td>
         <td class="cell-display">${s.last_service_odometer} KM</td>
         <td class="cell-display">${nextKm} KM</td>
         <td>
@@ -412,27 +452,72 @@ function renderNotifications(state) {
   if (!container) return;
   
   const due = checkReminders(state);
-  if (due.length === 0) {
+  
+  // Calculate warning/critical parts
+  const currentOdo = state.meta?.current_odometer || 0;
+  const enriched = computeAllServices(state.services || [], currentOdo);
+  const partAlerts = enriched.filter(s => s.status.cssClass === 'status--critical' || s.status.cssClass === 'status--warning');
+  
+  if (due.length === 0 && partAlerts.length === 0) {
     container.innerHTML = '';
     return;
   }
   
-  container.innerHTML = due.map(item => `
-    <div class="reminder-alert-card alert-due" data-type="${item.type}">
-      <div class="alert-content">
-        <div class="alert-icon">${item.icon}</div>
-        <div class="alert-text">
-          <h4>🚨 Routine Check Due: ${item.title}</h4>
-          <p>${item.message}</p>
+  let html = '';
+  
+  // Render part alerts first (warning/critical parts moved to the top!)
+  partAlerts.forEach(item => {
+    const isCritical = item.status.cssClass === 'status--critical';
+    const alertClass = isCritical ? 'alert-critical' : 'alert-warning';
+    const icon = isCritical ? '🚨' : '⚠️';
+    const badgeText = isCritical ? 'OVERDUE' : 'DUE SOON';
+    
+    let alertMsg = '';
+    if (item.deltaRemaining <= 0) {
+      alertMsg = `${item.name} is ${Math.abs(item.deltaRemaining)} KM overdue (Target: ${item.interval_km} KM).`;
+    } else {
+      alertMsg = `${item.name} has only ${item.deltaRemaining} KM remaining before target interval (${item.interval_km} KM).`;
+    }
+    
+    html += `
+      <div class="reminder-alert-card ${alertClass}" data-type="part-alert">
+        <div class="alert-content">
+          <div class="alert-icon">${icon}</div>
+          <div class="alert-text">
+            <h4>${icon} Part Tracker ${badgeText}: ${item.name}</h4>
+            <p>${alertMsg}</p>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button type="button" class="action-btn submit-btn btn-log-service-trigger" data-service-id="${item.id}">
+            Log Service
+          </button>
         </div>
       </div>
-      <div class="alert-actions">
-        <button type="button" class="action-btn submit-btn btn-action-notification" data-modal="${item.modalId}">
-          Start Inspection
-        </button>
+    `;
+  });
+  
+  // Render checklist reminders
+  due.forEach(item => {
+    html += `
+      <div class="reminder-alert-card alert-due" data-type="${item.type}">
+        <div class="alert-content">
+          <div class="alert-icon">${item.icon}</div>
+          <div class="alert-text">
+            <h4>🚨 Routine Check Due: ${item.title}</h4>
+            <p>${item.message}</p>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button type="button" class="action-btn submit-btn btn-action-notification" data-modal="${item.modalId}">
+            Start Inspection
+          </button>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  });
+  
+  container.innerHTML = html;
 }
 
 /**
@@ -462,6 +547,17 @@ function renderSettings(state) {
   if (monthlyEnabled) monthlyEnabled.checked = r.monthly.enabled;
   if (monthlyDate) monthlyDate.value = r.monthly.date;
   if (monthlyTime) monthlyTime.value = r.monthly.time;
+
+  // Toggle Load Example Data card visibility based on active vehicle profile state
+  const activeVeh = getActiveVehicle(state);
+  const exampleCard = document.getElementById('card-example-data');
+  if (exampleCard) {
+    if (activeVeh && (!activeVeh.services || activeVeh.services.length === 0)) {
+      exampleCard.removeAttribute('hidden');
+    } else {
+      exampleCard.setAttribute('hidden', '');
+    }
+  }
 }
 
 /**
@@ -469,21 +565,46 @@ function renderSettings(state) {
  * @param {object} state
  */
 function renderAll(state) {
-  renderNotifications(state);
+  // Sync the theme
+  const theme = state.settings?.theme || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  const themeBtn = document.getElementById('btn-theme-toggle');
+  if (themeBtn) {
+    themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+  }
+
+  // Populate vehicle list selector
+  renderVehicleSelector(state);
+
+  const activeVeh = getActiveVehicle(state);
+  
+  // Construct scoped state mimicking single-vehicle format
+  const scopedState = {
+    meta: activeVeh.meta,
+    services: activeVeh.services,
+    routine_checks: activeVeh.routine_checks,
+    settings: state.settings
+  };
+
+  renderNotifications(scopedState);
   renderOdometerHUD(state);
   
   // Compute parts deltas
-  const enriched = computeAllServices(state.services, state.meta.current_odometer);
+  const enriched = computeAllServices(activeVeh.services, activeVeh.meta.current_odometer);
   const sorted = sortByPriority(enriched);
   
-  renderServiceCards(sorted);
-  renderServiceTable(state);
+  renderServiceCards(sorted, activeVeh);
+  renderServiceTable(scopedState);
   
-  renderDailyChecklist(state);
-  renderWeeklyChecklist(state);
-  renderMonthlyChecklist(state);
-  renderModalChecklists(state);
+  renderDailyChecklist(scopedState);
+  renderWeeklyChecklist(scopedState);
+  renderMonthlyChecklist(scopedState);
+  renderModalChecklists(scopedState);
   renderSettings(state);
+
+  // Render cost summary and history logs
+  renderCostSummary(activeVeh);
+  renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
 }
 
 /**
@@ -497,6 +618,7 @@ function showModal(service) {
   document.getElementById('edit-id').value = service.id;
   document.getElementById('edit-name').value = service.name;
   document.getElementById('edit-interval').value = service.interval_km;
+  document.getElementById('edit-warning-threshold').value = service.warning_threshold !== undefined ? service.warning_threshold : '';
   document.getElementById('edit-last-service').value = service.last_service_odometer;
 
   modal.removeAttribute('hidden');
@@ -533,6 +655,290 @@ function closeModal() {
   pendingImportFile = null;
 }
 
+/**
+ * Render a mini bar chart of the last 14 odometer readings.
+ * @param {Array<object>} log
+ * @returns {string} SVG HTML string
+ */
+function generateSvgChart(log) {
+  if (!Array.isArray(log) || log.length < 2) {
+    return `<div style="text-align: center; padding: 20px 0; color: var(--text-secondary); font-size: 11px;">
+              Log odometer updates to display growth chart (minimum 2 logs required).
+            </div>`;
+  }
+  
+  // Get last 14 entries and sort by timestamp ascending
+  const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp).slice(-14);
+  const n = sorted.length;
+  
+  const odos = sorted.map(d => d.odometer);
+  const maxOdo = Math.max(...odos);
+  const minOdo = Math.min(...odos);
+  const odoRange = maxOdo - minOdo || 1;
+  
+  // Dimensions
+  const width = 500;
+  const height = 60;
+  const paddingLeft = 35;
+  const paddingRight = 10;
+  const paddingTop = 10;
+  const paddingBottom = 15;
+  
+  const chartW = width - paddingLeft - paddingRight;
+  const chartH = height - paddingTop - paddingBottom;
+  
+  // Calculate points / columns
+  const colWidth = chartW / n;
+  let svgContent = '';
+  
+  // Y-axis gridlines/ticks (min and max)
+  svgContent += `<line x1="${paddingLeft}" y1="${paddingTop}" x2="${width - paddingRight}" y2="${paddingTop}" class="chart-line" />`;
+  svgContent += `<line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" class="chart-line" />`;
+  svgContent += `<text x="${paddingLeft - 8}" y="${paddingTop + 3}" class="chart-text" style="text-anchor: end;">${maxOdo}</text>`;
+  svgContent += `<text x="${paddingLeft - 8}" y="${height - paddingBottom + 3}" class="chart-text" style="text-anchor: end;">${minOdo}</text>`;
+  
+  // Plot bars
+  sorted.forEach((item, index) => {
+    const x = paddingLeft + (index * colWidth) + (colWidth * 0.1);
+    const w = colWidth * 0.8;
+    
+    // Normalize height relative to minOdo to show relative growth
+    const valRatio = (item.odometer - minOdo) / odoRange;
+    const h = Math.max(4, valRatio * chartH); // minimum height of 4px
+    const y = height - paddingBottom - h;
+    
+    const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, {month: 'numeric', day: 'numeric'});
+    
+    svgContent += `
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" class="chart-bar">
+        <title>Odo: ${item.odometer} KM on ${dateStr}</title>
+      </rect>
+    `;
+    
+    // X-axis labels (draw first, middle, last to prevent overlap)
+    if (index === 0 || index === Math.floor(n / 2) || index === n - 1) {
+      svgContent += `
+        <text x="${x + w/2}" y="${height - 2}" class="chart-text">${dateStr}</text>
+      `;
+    }
+  });
+  
+  return `<svg viewBox="0 0 ${width} ${height}" class="svg-chart">${svgContent}</svg>`;
+}
+
+/**
+ * Populate the scrollable odometer log history list in its modal.
+ * @param {object} state
+ * @param {number} [page] Page number (0-indexed)
+ */
+function populateOdometerHistoryModal(state, page) {
+  const listContainer = document.getElementById('odo-history-list');
+  if (!listContainer) return;
+  
+  const activeVeh = getActiveVehicle(state);
+  const log = activeVeh.odometer_log || [];
+  
+  const pageVal = page !== undefined ? page : (window.odoHistoryPage || 0);
+  const ITEMS_PER_PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(log.length / ITEMS_PER_PAGE));
+  
+  // Update pagination DOM states
+  const pageDisplay = document.getElementById('odo-page-display');
+  const btnPrev = document.getElementById('btn-odo-prev');
+  const btnNext = document.getElementById('btn-odo-next');
+  
+  if (pageDisplay) {
+    pageDisplay.textContent = `Page ${pageVal + 1} of ${totalPages}`;
+  }
+  if (btnPrev) {
+    if (pageVal === 0) {
+      btnPrev.setAttribute('disabled', 'true');
+    } else {
+      btnPrev.removeAttribute('disabled');
+    }
+  }
+  if (btnNext) {
+    if (pageVal >= totalPages - 1) {
+      btnNext.setAttribute('disabled', 'true');
+    } else {
+      btnNext.removeAttribute('disabled');
+    }
+  }
+
+  if (log.length === 0) {
+    listContainer.innerHTML = `<div class="history-item">No odometer logs recorded. Update your odometer to start tracking.</div>`;
+    return;
+  }
+  
+  // Sort log by timestamp descending (newest first)
+  const sorted = [...log].sort((a, b) => b.timestamp - a.timestamp);
+  
+  const start = pageVal * ITEMS_PER_PAGE;
+  const pageItems = sorted.slice(start, start + ITEMS_PER_PAGE);
+  
+  listContainer.innerHTML = pageItems.map(item => {
+    const dateStr = new Date(item.timestamp).toLocaleString();
+    return `
+      <div class="history-item">
+        <div class="history-item-header">
+          <span class="history-item-date">${dateStr}</span>
+          <span class="history-item-odo">${item.odometer} KM</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Populate the active vehicle dropdown menu and bind options.
+ * @param {object} state
+ */
+function renderVehicleSelector(state) {
+  const dropdown = document.getElementById('select-vehicle');
+  if (!dropdown) return;
+  
+  const vehicles = state.vehicles || {};
+  let html = '';
+  for (const id in vehicles) {
+    const v = vehicles[id];
+    const selectedAttr = state.active_vehicle_id === id ? 'selected' : '';
+    html += `<option value="${id}" ${selectedAttr}>${v.icon} ${v.name}</option>`;
+  }
+  dropdown.innerHTML = html;
+}
+
+/**
+ * Render the aggregated cost summary block in View B.
+ * @param {object} activeVeh
+ */
+function renderCostSummary(activeVeh) {
+  const container = document.getElementById('cost-summary-content');
+  if (!container) return;
+  
+  const history = activeVeh.service_history || [];
+  const summary = computeCostSummary(history);
+  
+  if (history.length === 0) {
+    container.innerHTML = `<div style="text-align: center; padding: 16px; color: var(--text-secondary);">No services logged yet. Completing parts trackers will aggregate costs here.</div>`;
+    return;
+  }
+  
+  // Map per-service IDs to names for readability
+  const servicesMap = {};
+  if (Array.isArray(activeVeh.services)) {
+    activeVeh.services.forEach(s => {
+      servicesMap[s.id] = s.name;
+    });
+  }
+  
+  let componentsHtml = '';
+  for (const sid in summary.perService) {
+    const sName = servicesMap[sid] || `Removed Component (${sid})`;
+    componentsHtml += `
+      <div class="tracker-stat">
+        <span class="lbl">${sName}</span>
+        <span class="val" style="color: var(--status-optimal); font-weight: 600;">${summary.perService[sid].toLocaleString()} IDR</span>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = `
+    <div class="cost-total-label">
+      Total Maintenance Cost: ${summary.total.toLocaleString()} IDR
+    </div>
+    <div class="cost-breakdown-container">
+      <h4 class="per-component-title">Spend Per Component</h4>
+      ${componentsHtml}
+    </div>
+  `;
+}
+
+/**
+ * Render the timeline list of service histories inside View B.
+ * @param {object} activeVeh
+ * @param {string} [filterMode] 'monthly' | 'yearly'
+ * @param {Date} [activeDate] Active date filter context
+ */
+function renderServiceHistory(activeVeh, filterMode, activeDate) {
+  const container = document.getElementById('service-history-list');
+  if (!container) return;
+  
+  const mode = filterMode || window.historyFilterMode || 'monthly';
+  const date = activeDate || window.historyActiveDate || new Date();
+  
+  // Sync toggle buttons CSS states
+  const monthlyBtn = document.getElementById('btn-history-monthly');
+  const yearlyBtn = document.getElementById('btn-history-yearly');
+  if (monthlyBtn && yearlyBtn) {
+    if (mode === 'monthly') {
+      monthlyBtn.classList.add('active');
+      yearlyBtn.classList.remove('active');
+    } else {
+      monthlyBtn.classList.remove('active');
+      yearlyBtn.classList.add('active');
+    }
+  }
+  
+  // Format navigation text display
+  const displayLabel = document.getElementById('history-date-display');
+  if (displayLabel) {
+    const yearVal = date.getFullYear();
+    if (mode === 'monthly') {
+      const monthName = date.toLocaleString('default', { month: 'long' });
+      displayLabel.textContent = `${monthName} ${yearVal}`;
+    } else {
+      displayLabel.textContent = `${yearVal}`;
+    }
+  }
+
+  const history = activeVeh.service_history || [];
+  if (history.length === 0) {
+    container.innerHTML = `<div class="history-item">No service records found. Services will be displayed here as they are completed.</div>`;
+    return;
+  }
+  
+  // Filter history records
+  const targetYear = date.getFullYear();
+  const targetMonth = date.getMonth();
+  
+  const filtered = history.filter(item => {
+    const itemDate = new Date(item.timestamp);
+    if (mode === 'monthly') {
+      return itemDate.getFullYear() === targetYear && itemDate.getMonth() === targetMonth;
+    } else {
+      return itemDate.getFullYear() === targetYear;
+    }
+  });
+
+  if (filtered.length === 0) {
+    const timeFrameStr = mode === 'monthly'
+      ? date.toLocaleString('default', { month: 'long', year: 'numeric' })
+      : targetYear.toString();
+    container.innerHTML = `<div class="history-item">No service records found for ${timeFrameStr}.</div>`;
+    return;
+  }
+  
+  const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
+  
+  container.innerHTML = sorted.map(item => {
+    const dateStr = new Date(item.timestamp).toLocaleString();
+    const notesHtml = item.notes ? `<div class="history-item-notes">${item.notes}</div>` : '';
+    return `
+      <div class="history-item">
+        <div class="history-item-header">
+          <span class="history-item-date">${dateStr}</span>
+          <span class="history-item-cost">${item.cost.toLocaleString()} IDR</span>
+        </div>
+        <div class="history-item-header" style="margin-top: 4px;">
+          <strong>${item.service_name}</strong>
+          <span class="history-item-odo">${item.odometer_at_service} KM</span>
+        </div>
+        ${notesHtml}
+      </div>
+    `;
+  }).join('');
+}
+
 // Assign helpers to global object for DOM actions and app.js access
 window.renderAll = renderAll;
 window.showToast = showToast;
@@ -545,3 +951,7 @@ window.renderWeeklyChecklist = renderWeeklyChecklist;
 window.renderMonthlyChecklist = renderMonthlyChecklist;
 window.renderNotifications = renderNotifications;
 window.renderSettings = renderSettings;
+window.populateOdometerHistoryModal = populateOdometerHistoryModal;
+window.renderVehicleSelector = renderVehicleSelector;
+window.renderCostSummary = renderCostSummary;
+window.renderServiceHistory = renderServiceHistory;

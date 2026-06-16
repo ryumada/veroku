@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Icon Generator | Veroku</title>
+  <style>
+    :root {
+      --bg-color: #0b0f17;
+      --panel-bg: #111827;
+      --text-main: #f9fafb;
+      --text-secondary: #9ca3af;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: var(--panel-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .preview-box {
+      display: inline-block;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    canvas {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      max-width: 100%;
+      height: auto;
+    }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: var(--accent-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PWA Icon Generator</h1>
+    <p>Generate high-resolution PNG icon assets using HTML5 canvas. Download these images and save them as <code>icon-192.png</code> and <code>icon-512.png</code> respectively to support Android/Chrome mobile installations.</p>
+    
+    <div class="preview-box">
+      <canvas id="icon-canvas" width="512" height="512"></canvas>
+    </div>
+    
+    <div class="btn-group">
+      <button id="btn-draw">Draw Emoji</button>
+      <button id="btn-192">Download 192x192</button>
+      <button id="btn-512">Download 512x512</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('icon-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function drawIcon() {
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, 512, 512);
+      grad.addColorStop(0, '#1e293b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Circle border accent
+      ctx.beginPath();
+      ctx.arc(256, 256, 230, 0, 2 * Math.PI);
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = '#3b82f6';
+      ctx.stroke();
+
+      // Emoji
+      ctx.font = '240px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🏍️', 256, 256 + 10);
+    }
+
+    function downloadIcon(size) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = size;
+      tempCanvas.height = size;
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      // Draw scaled
+      tempCtx.drawImage(canvas, 0, 0, 512, 512, 0, 0, size, size);
+      
+      const url = tempCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `icon-${size}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    document.getElementById('btn-draw').addEventListener('click', drawIcon);
+    document.getElementById('btn-192').addEventListener('click', () => downloadIcon(192));
+    document.getElementById('btn-512').addEventListener('click', () => downloadIcon(512));
+
+    // Draw initially
+    drawIcon();
+  </script>
+</body>
+</html>

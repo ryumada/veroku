@@ -319,6 +319,7 @@ body {
   font-size: 14px;
   padding: 10px 12px;
   transition: var(--transition-fast);
+  width: 100%;
 }
 .form-group input:focus {
   outline: none;
@@ -369,12 +370,6 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-}
-.form-group-row-3 {
-  display: grid;
-  grid-template-columns: 2fr 1fr 2fr 1fr;
-  gap: 8px;
-  align-items: end;
 }
 .form-divider {
   border-top: 1px solid var(--border-light);
@@ -1753,8 +1748,7 @@ body {
   .settings-row-grid {
     grid-template-columns: 1fr;
   }
-  .form-group-row-2,
-  .form-group-row-3 {
+  .form-group-row-2 {
     grid-template-columns: 1fr;
     gap: 0;
   }

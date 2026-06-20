@@ -31,12 +31,12 @@ function showToast(message, type = 'success') {
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   const icon = type === 'success' ? '✅' : '❌';
   toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
-  
+
   container.appendChild(toast);
-  
+
   // Auto-remove after 3 seconds
   setTimeout(() => {
     toast.style.animation = 'modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse';
@@ -61,8 +61,8 @@ function renderOdometerHUD(state) {
   const activeVeh = getActiveVehicle(state);
   const currentOdo = activeVeh.meta.current_odometer || 0;
   const lastUpdated = activeVeh.meta.last_updated_timestamp;
-  const timeString = lastUpdated 
-    ? new Date(lastUpdated).toLocaleString() 
+  const timeString = lastUpdated
+    ? new Date(lastUpdated).toLocaleString()
     : 'Never updated';
 
   const paddedOdo = formatOdometer(currentOdo);
@@ -140,7 +140,7 @@ function renderServiceCards(enrichedServices, activeVeh) {
   enrichedServices.forEach(s => {
     const isCritical = s.status.cssClass === 'status--critical';
     const isWarning = s.status.cssClass === 'status--warning';
-    
+
     const deltaText = s.displayDeltaText;
 
     let forecastHtml = '';
@@ -193,14 +193,14 @@ function renderServiceCards(enrichedServices, activeVeh) {
           <span class="tracker-name">${s.name}</span>
           <span class="tracker-status-tag">${s.status.label}</span>
         </div>
-        
+
         <div class="tracker-body">
           <div class="tracker-remaining">
             <span class="tracker-remaining-header">Maintenance Delta</span>
             <span class="tracker-remaining-value">${deltaText}</span>
             ${forecastHtml}
           </div>
-          
+
           <div class="tracker-stat">
             <span class="lbl">Interval Limit</span>
             <span class="val">${intervalText}</span>
@@ -214,7 +214,7 @@ function renderServiceCards(enrichedServices, activeVeh) {
             <span class="val">${nextExpectedText}</span>
           </div>
         </div>
-        
+
         <div class="tracker-actions">
           <button class="tracker-done-btn" data-service-id="${s.id}">
             <span>✓</span> Mark as Done
@@ -287,7 +287,7 @@ function renderServiceTable(state) {
   window.componentsPerPage = parseInt(window.componentsPerPage, 10) || 10;
   const totalComponents = sortedEnriched.length;
   const totalPages = Math.ceil(totalComponents / window.componentsPerPage) || 1;
-  
+
   if (window.componentsPage > totalPages) {
     window.componentsPage = totalPages;
   }
@@ -411,22 +411,22 @@ function renderServiceTable(state) {
       paginationBar.setAttribute('hidden', 'true');
     } else {
       paginationBar.removeAttribute('hidden');
-      
+
       const pageDisplay = document.getElementById('components-page-display');
       if (pageDisplay) {
         pageDisplay.textContent = `Page ${window.componentsPage} of ${totalPages}`;
       }
-      
+
       const btnPrev = document.getElementById('btn-components-prev');
       if (btnPrev) {
         btnPrev.disabled = window.componentsPage === 1;
       }
-      
+
       const btnNext = document.getElementById('btn-components-next');
       if (btnNext) {
         btnNext.disabled = window.componentsPage === totalPages;
       }
-      
+
       const perPageSelect = document.getElementById('select-components-per-page');
       if (perPageSelect) {
         perPageSelect.value = window.componentsPerPage;
@@ -447,16 +447,16 @@ function parseMarkdown(text) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-  
+
   // Bold: **text**
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
+
   // Italics: *text*
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
+
   // Inline code: `code`
   html = html.replace(/`(.*?)`/g, '<code>$1</code>');
-  
+
   // Parse bullet points
   const lines = html.split('\n');
   let inList = false;
@@ -503,7 +503,7 @@ function generateChecklistHTML(items, type) {
     const checkedClass = item.checked ? 'checked' : '';
     const hasDescClass = item.desc ? 'has-desc' : '';
     const parsedDesc = item.desc ? parseMarkdown(item.desc) : '';
-    
+
     return `
       <div class="checklist-item ${checkedClass} ${hasDescClass}" data-type="${type}" data-id="${item.id}">
         <div class="chk-checkbox-wrap">
@@ -553,7 +553,7 @@ function renderModalChecklists(state) {
   const dailyModal = document.getElementById('modal-daily-list');
   const weeklyModal = document.getElementById('modal-weekly-list');
   const monthlyModal = document.getElementById('modal-monthly-list');
-  
+
   if (dailyModal) {
     dailyModal.innerHTML = generateChecklistHTML(state.routine_checks.daily, 'daily');
   }
@@ -572,23 +572,23 @@ function renderModalChecklists(state) {
  */
 function checkReminders(state) {
   if (!state.settings || !state.settings.reminders) return [];
-  
+
   const due = [];
   const now = new Date();
   const currentHour = now.getHours();
   const currentMin = now.getMinutes();
-  
+
   const checkTimePast = (timeStr) => {
     if (!timeStr) return false;
     const [schedHour, schedMin] = timeStr.split(':').map(Number);
     return (currentHour > schedHour) || (currentHour === schedHour && currentMin >= schedMin);
   };
-  
+
   // 1. Daily Checklist
   const daily = state.settings.reminders.daily;
   if (daily?.enabled) {
-    const hasUnchecked = state.routine_checks.daily.length > 0 && 
-                         state.routine_checks.daily.some(item => !item.checked);
+    const hasUnchecked = state.routine_checks.daily.length > 0 &&
+      state.routine_checks.daily.some(item => !item.checked);
     if (hasUnchecked && checkTimePast(daily.time)) {
       due.push({
         type: 'daily',
@@ -599,13 +599,13 @@ function checkReminders(state) {
       });
     }
   }
-  
+
   // 2. Weekly Checklist
   const weekly = state.settings.reminders.weekly;
   if (weekly?.enabled) {
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday...
-    const hasUnchecked = state.routine_checks.weekly.length > 0 && 
-                         state.routine_checks.weekly.some(item => !item.checked);
+    const hasUnchecked = state.routine_checks.weekly.length > 0 &&
+      state.routine_checks.weekly.some(item => !item.checked);
     if (hasUnchecked && currentDay === Number(weekly.day) && checkTimePast(weekly.time)) {
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       due.push({
@@ -617,13 +617,13 @@ function checkReminders(state) {
       });
     }
   }
-  
+
   // 3. Monthly Checklist
   const monthly = state.settings.reminders.monthly;
   if (monthly?.enabled) {
     const currentDate = now.getDate();
-    const hasUnchecked = state.routine_checks.monthly.length > 0 && 
-                         state.routine_checks.monthly.some(item => !item.checked);
+    const hasUnchecked = state.routine_checks.monthly.length > 0 &&
+      state.routine_checks.monthly.some(item => !item.checked);
     if (hasUnchecked && currentDate === Number(monthly.date) && checkTimePast(monthly.time)) {
       due.push({
         type: 'monthly',
@@ -634,7 +634,7 @@ function checkReminders(state) {
       });
     }
   }
-  
+
   return due;
 }
 
@@ -645,35 +645,35 @@ function checkReminders(state) {
 function renderNotifications(state) {
   const container = document.getElementById('dashboard-notifications');
   if (!container) return;
-  
+
   const due = checkReminders(state);
-  
+
   // Calculate warning/critical parts
   const currentOdo = state.meta?.current_odometer || 0;
   const enriched = computeAllServices(state.services || [], currentOdo);
   const partAlerts = enriched.filter(s => s.status.cssClass === 'status--critical' || s.status.cssClass === 'status--warning');
-  
+
   if (due.length === 0 && partAlerts.length === 0) {
     container.innerHTML = '';
     return;
   }
-  
+
   let html = '';
-  
+
   // Render part alerts first (warning/critical parts moved to the top!)
   partAlerts.forEach(item => {
     const isCritical = item.status.cssClass === 'status--critical';
     const alertClass = isCritical ? 'alert-critical' : 'alert-warning';
     const icon = isCritical ? '🚨' : '⚠️';
     const badgeText = isCritical ? 'OVERDUE' : 'DUE SOON';
-    
+
     let alertMsg = '';
     if (item.deltaRemaining <= 0) {
       alertMsg = `${item.name} is ${Math.abs(item.deltaRemaining)} KM overdue (Target: ${item.interval_km} KM).`;
     } else {
       alertMsg = `${item.name} has only ${item.deltaRemaining} KM remaining before target interval (${item.interval_km} KM).`;
     }
-    
+
     html += `
       <div class="reminder-alert-card ${alertClass}" data-type="part-alert">
         <div class="alert-content">
@@ -691,7 +691,7 @@ function renderNotifications(state) {
       </div>
     `;
   });
-  
+
   // Render checklist reminders
   due.forEach(item => {
     html += `
@@ -711,7 +711,7 @@ function renderNotifications(state) {
       </div>
     `;
   });
-  
+
   container.innerHTML = html;
 }
 
@@ -721,21 +721,21 @@ function renderNotifications(state) {
  */
 function renderSettings(state) {
   if (!state.settings || !state.settings.reminders) return;
-  
+
   const r = state.settings.reminders;
-  
+
   const dailyEnabled = document.getElementById('reminder-daily-enabled');
   const dailyTime = document.getElementById('reminder-daily-time');
   if (dailyEnabled) dailyEnabled.checked = r.daily.enabled;
   if (dailyTime) dailyTime.value = r.daily.time;
-  
+
   const weeklyEnabled = document.getElementById('reminder-weekly-enabled');
   const weeklyDay = document.getElementById('reminder-weekly-day');
   const weeklyTime = document.getElementById('reminder-weekly-time');
   if (weeklyEnabled) weeklyEnabled.checked = r.weekly.enabled;
   if (weeklyDay) weeklyDay.value = r.weekly.day;
   if (weeklyTime) weeklyTime.value = r.weekly.time;
-  
+
   const monthlyEnabled = document.getElementById('reminder-monthly-enabled');
   const monthlyDate = document.getElementById('reminder-monthly-date');
   const monthlyTime = document.getElementById('reminder-monthly-time');
@@ -772,7 +772,7 @@ function renderAll(state) {
   renderVehicleSelector(state);
 
   const activeVeh = getActiveVehicle(state);
-  
+
   // Construct scoped state mimicking single-vehicle format
   const scopedState = {
     meta: activeVeh.meta,
@@ -783,14 +783,14 @@ function renderAll(state) {
 
   renderNotifications(scopedState);
   renderOdometerHUD(state);
-  
+
   // Compute parts deltas
   const enriched = computeAllServices(activeVeh.services, activeVeh.meta.current_odometer);
   const sorted = sortServices(enriched, window.dashboardSortMode || 'priority');
-  
+
   renderServiceCards(sorted, activeVeh);
   renderServiceTable(scopedState);
-  
+
   renderDailyChecklist(scopedState);
   renderWeeklyChecklist(scopedState);
   renderMonthlyChecklist(scopedState);
@@ -814,16 +814,16 @@ function showModal(service) {
   document.getElementById('edit-name').value = service.name;
   document.getElementById('edit-interval').value = service.interval_km || '';
   document.getElementById('edit-warning-threshold').value = service.warning_threshold !== undefined ? service.warning_threshold : '';
-  
+
   // Populate new time fields
   document.getElementById('edit-interval-time-val').value = service.interval_time_val || '';
   document.getElementById('edit-interval-time-unit').value = service.interval_time_unit || 'months';
   document.getElementById('edit-warning-time-val').value = service.warning_time_val || '';
   document.getElementById('edit-warning-time-unit').value = service.warning_time_unit || 'days';
-  
+
   // Last service odometer and date
   document.getElementById('edit-last-service').value = service.last_service_odometer;
-  
+
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('edit-last-service-date').value = service.last_service_date || todayStr;
 
@@ -843,11 +843,11 @@ function showImportConfirmModal(file) {
   if (!modal) return;
 
   pendingImportFile = file;
-  
+
   // Reset fields
   const textInput = document.getElementById('confirm-text-input');
   if (textInput) textInput.value = '';
-  
+
   const confirmBtn = document.getElementById('btn-confirm-import');
   if (confirmBtn) confirmBtn.setAttribute('disabled', 'true');
 
@@ -876,16 +876,16 @@ function generateSvgChart(log) {
               Log odometer updates to display growth chart (minimum 2 logs required).
             </div>`;
   }
-  
+
   // Get last 14 entries and sort by timestamp ascending
   const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp).slice(-14);
   const n = sorted.length;
-  
+
   const odos = sorted.map(d => d.odometer);
   const maxOdo = Math.max(...odos);
   const minOdo = Math.min(...odos);
   const odoRange = maxOdo - minOdo || 1;
-  
+
   // Dimensions
   const width = 500;
   const height = 60;
@@ -893,46 +893,46 @@ function generateSvgChart(log) {
   const paddingRight = 10;
   const paddingTop = 10;
   const paddingBottom = 15;
-  
+
   const chartW = width - paddingLeft - paddingRight;
   const chartH = height - paddingTop - paddingBottom;
-  
+
   // Calculate points / columns
   const colWidth = chartW / n;
   let svgContent = '';
-  
+
   // Y-axis gridlines/ticks (min and max)
   svgContent += `<line x1="${paddingLeft}" y1="${paddingTop}" x2="${width - paddingRight}" y2="${paddingTop}" class="chart-line" />`;
   svgContent += `<line x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" class="chart-line" />`;
   svgContent += `<text x="${paddingLeft - 8}" y="${paddingTop + 3}" class="chart-text" style="text-anchor: end;">${maxOdo}</text>`;
   svgContent += `<text x="${paddingLeft - 8}" y="${height - paddingBottom + 3}" class="chart-text" style="text-anchor: end;">${minOdo}</text>`;
-  
+
   // Plot bars
   sorted.forEach((item, index) => {
     const x = paddingLeft + (index * colWidth) + (colWidth * 0.1);
     const w = colWidth * 0.8;
-    
+
     // Normalize height relative to minOdo to show relative growth
     const valRatio = (item.odometer - minOdo) / odoRange;
     const h = Math.max(4, valRatio * chartH); // minimum height of 4px
     const y = height - paddingBottom - h;
-    
-    const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, {month: 'numeric', day: 'numeric'});
-    
+
+    const dateStr = new Date(item.timestamp).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' });
+
     svgContent += `
       <rect x="${x}" y="${y}" width="${w}" height="${h}" class="chart-bar">
         <title>Odo: ${item.odometer} KM on ${dateStr}</title>
       </rect>
     `;
-    
+
     // X-axis labels (draw first, middle, last to prevent overlap)
     if (index === 0 || index === Math.floor(n / 2) || index === n - 1) {
       svgContent += `
-        <text x="${x + w/2}" y="${height - 2}" class="chart-text">${dateStr}</text>
+        <text x="${x + w / 2}" y="${height - 2}" class="chart-text">${dateStr}</text>
       `;
     }
   });
-  
+
   return `<svg viewBox="0 0 ${width} ${height}" class="svg-chart">${svgContent}</svg>`;
 }
 
@@ -944,19 +944,19 @@ function generateSvgChart(log) {
 function populateOdometerHistoryModal(state, page) {
   const listContainer = document.getElementById('odo-history-list');
   if (!listContainer) return;
-  
+
   const activeVeh = getActiveVehicle(state);
   const log = activeVeh.odometer_log || [];
-  
+
   const pageVal = page !== undefined ? page : (window.odoHistoryPage || 0);
   const ITEMS_PER_PAGE = 5;
   const totalPages = Math.max(1, Math.ceil(log.length / ITEMS_PER_PAGE));
-  
+
   // Update pagination DOM states
   const pageDisplay = document.getElementById('odo-page-display');
   const btnPrev = document.getElementById('btn-odo-prev');
   const btnNext = document.getElementById('btn-odo-next');
-  
+
   if (pageDisplay) {
     pageDisplay.textContent = `Page ${pageVal + 1} of ${totalPages}`;
   }
@@ -979,13 +979,13 @@ function populateOdometerHistoryModal(state, page) {
     listContainer.innerHTML = `<div class="history-item">No odometer logs recorded. Update your odometer to start tracking.</div>`;
     return;
   }
-  
+
   // Sort log by timestamp descending (newest first)
   const sorted = [...log].sort((a, b) => b.timestamp - a.timestamp);
-  
+
   const start = pageVal * ITEMS_PER_PAGE;
   const pageItems = sorted.slice(start, start + ITEMS_PER_PAGE);
-  
+
   listContainer.innerHTML = pageItems.map(item => {
     const dateStr = new Date(item.timestamp).toLocaleString();
     return `
@@ -1006,7 +1006,7 @@ function populateOdometerHistoryModal(state, page) {
 function renderVehicleSelector(state) {
   const dropdown = document.getElementById('select-vehicle');
   if (!dropdown) return;
-  
+
   const vehicles = state.vehicles || {};
   let html = '';
   for (const id in vehicles) {
@@ -1024,15 +1024,15 @@ function renderVehicleSelector(state) {
 function renderCostSummary(activeVeh) {
   const container = document.getElementById('cost-summary-content');
   if (!container) return;
-  
+
   const history = activeVeh.service_history || [];
   const summary = computeCostSummary(history);
-  
+
   if (history.length === 0) {
     container.innerHTML = `<div style="text-align: center; padding: 16px; color: var(--text-secondary);">No services logged yet. Completing parts trackers will aggregate costs here.</div>`;
     return;
   }
-  
+
   // Map per-service IDs to names for readability
   const servicesMap = {};
   if (Array.isArray(activeVeh.services)) {
@@ -1040,7 +1040,7 @@ function renderCostSummary(activeVeh) {
       servicesMap[s.id] = s.name;
     });
   }
-  
+
   let componentsHtml = '';
   for (const sid in summary.perService) {
     const sName = servicesMap[sid] || `Removed Component (${sid})`;
@@ -1051,7 +1051,7 @@ function renderCostSummary(activeVeh) {
       </div>
     `;
   }
-  
+
   container.innerHTML = `
     <div class="cost-total-label">
       Total Maintenance Cost: ${summary.total.toLocaleString()} IDR
@@ -1072,10 +1072,10 @@ function renderCostSummary(activeVeh) {
 function renderServiceHistory(activeVeh, filterMode, activeDate) {
   const container = document.getElementById('service-history-list');
   if (!container) return;
-  
+
   const mode = filterMode || window.historyFilterMode || 'monthly';
   const date = activeDate || window.historyActiveDate || new Date();
-  
+
   // Sync toggle buttons CSS states
   const monthlyBtn = document.getElementById('btn-history-monthly');
   const yearlyBtn = document.getElementById('btn-history-yearly');
@@ -1088,7 +1088,7 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
       yearlyBtn.classList.add('active');
     }
   }
-  
+
   // Format navigation text display
   const displayLabel = document.getElementById('history-date-display');
   if (displayLabel) {
@@ -1106,11 +1106,11 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
     container.innerHTML = `<div class="history-item">No service records found. Services will be displayed here as they are completed.</div>`;
     return;
   }
-  
+
   // Filter history records
   const targetYear = date.getFullYear();
   const targetMonth = date.getMonth();
-  
+
   const filtered = history.filter(item => {
     const itemDate = new Date(item.timestamp);
     if (mode === 'monthly') {
@@ -1127,9 +1127,9 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
     container.innerHTML = `<div class="history-item">No service records found for ${timeFrameStr}.</div>`;
     return;
   }
-  
+
   const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
-  
+
   container.innerHTML = sorted.map(item => {
     const dateStr = new Date(item.timestamp).toLocaleString();
     const notesHtml = item.notes ? `<div class="history-item-notes">${item.notes}</div>` : '';

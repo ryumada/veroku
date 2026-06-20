@@ -8,10 +8,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Initial State Load
   let state = getAppState();
-  
+
   // Save initial default seed data if database is empty
   saveAppState(state);
-  
+
   // Initialize Service History date navigation state (Monthly view by default)
   window.historyFilterMode = 'monthly';
   window.historyActiveDate = new Date();
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.getAttribute('data-view');
-      
+
       navButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -158,13 +158,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formAddService) {
     formAddService.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       const nameInput = document.getElementById('add-name');
       const intervalInput = document.getElementById('add-interval');
       const warningInput = document.getElementById('add-warning-threshold');
       const lastServiceInput = document.getElementById('add-last-service');
       const lastServiceDateInput = document.getElementById('add-last-service-date');
-      
+
       const intervalTimeValInput = document.getElementById('add-interval-time-val');
       const intervalTimeUnitSelect = document.getElementById('add-interval-time-unit');
       const warningTimeValInput = document.getElementById('add-warning-time-val');
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const warningVal = warningInput.value ? parseInt(warningInput.value, 10) : undefined;
       const lastService = parseInt(lastServiceInput.value, 10);
       const lastServiceDate = lastServiceDateInput.value;
-      
+
       const intervalTimeVal = intervalTimeValInput.value ? parseInt(intervalTimeValInput.value, 10) : undefined;
       const intervalTimeUnit = intervalTimeUnitSelect.value;
       const warningTimeVal = warningTimeValInput.value ? parseInt(warningTimeValInput.value, 10) : undefined;
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveAppState(state);
       window.componentsPage = 1;
       renderAll(state);
-      
+
       // Reset form and re-fill default date
       formAddService.reset();
       if (lastServiceDateInput) {
@@ -231,12 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = document.getElementById('edit-name').value.trim();
       const interval = document.getElementById('edit-interval').value ? parseInt(document.getElementById('edit-interval').value, 10) : undefined;
       const warningVal = document.getElementById('edit-warning-threshold').value ? parseInt(document.getElementById('edit-warning-threshold').value, 10) : undefined;
-      
+
       const intervalTimeVal = document.getElementById('edit-interval-time-val').value ? parseInt(document.getElementById('edit-interval-time-val').value, 10) : undefined;
       const intervalTimeUnit = document.getElementById('edit-interval-time-unit').value;
       const warningTimeVal = document.getElementById('edit-warning-time-val').value ? parseInt(document.getElementById('edit-warning-time-val').value, 10) : undefined;
       const warningTimeUnit = document.getElementById('edit-warning-time-unit').value;
-      
+
       const lastService = parseInt(document.getElementById('edit-last-service').value, 10);
       const lastServiceDate = document.getElementById('edit-last-service-date').value;
 
@@ -266,11 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
         service.warning_time_unit = warningTimeUnit;
         service.last_service_odometer = lastService;
         service.last_service_date = lastServiceDate;
-        
+
         // One-time overrides
         service.one_time_limit_km = oneTimeLimitKm;
         service.one_time_limit_date = oneTimeLimitDate;
-        
+
         saveAppState(state);
         renderAll(state);
         closeModal();
@@ -399,20 +399,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target !== input) {
       input.checked = !input.checked;
     }
-    
+
     list[itemIndex].checked = input.checked;
     const allMatchingItems = document.querySelectorAll(`.checklist-item[data-id="${id}"]`);
     allMatchingItems.forEach(matchItem => {
       const matchInput = matchItem.querySelector('input[type="checkbox"]');
       if (matchInput) matchInput.checked = input.checked;
-      
+
       if (input.checked) {
         matchItem.classList.add('checked');
       } else {
         matchItem.classList.remove('checked');
       }
     });
-    
+
     saveAppState(state);
 
     // Update streak if daily checks completed
@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formAddRoutine) {
     formAddRoutine.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       const type = document.getElementById('routine-type').value;
       const task = document.getElementById('routine-task').value.trim();
       const desc = document.getElementById('routine-desc').value.trim();
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeVeh.routine_checks[type].push(newItem);
       saveAppState(state);
       renderAll(state);
-      
+
       formAddRoutine.reset();
       closeModal();
       showToast(`Added routine safety task: ${task}`, 'success');
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Two-step text listener for typing 'IMPORT'
   const confirmTextInput = document.getElementById('confirm-text-input');
   const confirmBtn = document.getElementById('btn-confirm-import');
-  
+
   confirmTextInput?.addEventListener('input', (e) => {
     const val = e.target.value.trim().toUpperCase();
     if (val === 'IMPORT') {
@@ -594,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formSettings) {
     formSettings.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       state.settings = {
         reminders: {
           daily: {
@@ -613,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       };
-      
+
       saveAppState(state);
       renderAll(state);
       showToast('Settings saved successfully.', 'success');
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     accordionHeader.addEventListener('click', () => {
       const body = accordionCard.querySelector('.accordion-body');
       const isExpanded = accordionCard.classList.contains('expanded');
-      
+
       if (isExpanded) {
         accordionCard.classList.remove('expanded');
         body?.setAttribute('hidden', 'true');
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-import-settings')?.addEventListener('click', () => {
     document.getElementById('input-import')?.click();
   });
-  
+
   document.getElementById('btn-load-example-data')?.addEventListener('click', () => {
     const activeVeh = getActiveVehicle(state);
     if (!activeVeh) return;
@@ -756,6 +756,42 @@ document.addEventListener('DOMContentLoaded', () => {
         task: 'Roda dan Ban',
         desc: `Cara cek: Periksa kondisi fisik tapak ban secara visual (apakah ada paku, sayatan, retak, atau keausan abnormal). Periksa juga tekanan angin ban dalam kondisi dingin.\n\nSpesifikasi: * Ban Depan: 25 psi\nBan Belakang: 29 psi (untuk berkendara sendiri) / 33 psi (untuk berboncengan)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 8 (Spesifikasi tekanan angin ban dan setelan rantaisa) 53 – 56 (Spesifikasi Ban, Tekanan Udara, & Batas Keausan TWI).`,
         checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cek kunci ganda cakram',
+        desc: `Pastikan kunci ganda cakram dapat berfungsi dengan baik dan lepas dari cakram jika ingin berkendara. Bawa selalu kunci ganda cakram.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Sarung tangan',
+        desc: `Gunakan sarung tangan jika jarak jauh. Jika jarak dekat tidak pakai tidak apa.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Sepatu',
+        desc: `Gunakan sepatu jika jarak jauh. Jika jarak dekat tidak pakai tidak apa.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Jaket',
+        desc: `Gunakan jaket jika jarak jauh. Jika jarak dekat tidak pakai tidak apa.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Helm',
+        desc: `Gunakan helm jika jarak jauh. Jika jarak dekat tidak pakai tidak apa.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Jas hujan',
+        desc: `Bila musim hujan selalu bawa jas hujan dan berencana bepergian jarak jauh.`,
+        checked: false
       }
     ];
 
@@ -769,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         id: generateId('chk'),
         task: 'Pernapasan Bak Mesin',
-        desc: `Periksa bagian temmus pandang dari selang pembuangan. Bersihkan endapan di dalam selang dengan lebih sering jika motor sering dikendarai dalam kondisi hujan, kecepatan tinggi, atau setelah motor dicuci.`,
+        desc: `Periksa bagian tembus pandang dari selang pembuangan. Bersihkan endapan di dalam selang dengan lebih sering jika motor sering dikendarai dalam kondisi hujan, kecepatan tinggi, atau setelah motor dicuci.`,
         checked: false
       },
       {
@@ -803,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dangerAccordionHeader.addEventListener('click', () => {
       const body = dangerAccordionCard.querySelector('.accordion-body');
       const isExpanded = dangerAccordionCard.classList.contains('expanded');
-      
+
       if (isExpanded) {
         dangerAccordionCard.classList.remove('expanded');
         body?.setAttribute('hidden', 'true');
@@ -895,12 +931,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const name = document.getElementById('new-vehicle-name').value.trim();
       const icon = document.getElementById('new-vehicle-icon').value.trim();
-      
+
       if (!name || !icon) {
         showToast('Please specify a valid vehicle name and emoji.', 'error');
         return;
       }
-      
+
       addVehicleProfile(state, name, icon);
       saveAppState(state);
       renderAll(state);
@@ -920,19 +956,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const serviceId = document.getElementById('log-service-id').value;
       const cost = document.getElementById('log-service-cost').value;
       const notes = document.getElementById('log-service-notes').value.trim();
-      
+
       if (!serviceId || cost === '') {
         showToast('Please enter a valid maintenance cost.', 'error');
         return;
       }
-      
+
       markServiceDone(serviceId, Number(cost), notes);
-      
+
       // Reload state
       state = getAppState();
       renderAll(state);
       closeModal();
-      
+
       const activeVeh = getActiveVehicle(state);
       const service = activeVeh.services.find(s => s.id === serviceId);
       showToast(`Completed service for: ${service ? service.name : 'Component'}!`, 'success');
@@ -1021,12 +1057,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const name = document.getElementById('edit-vehicle-name').value.trim();
       const icon = document.getElementById('edit-vehicle-icon').value.trim();
-      
+
       if (!name || !icon) {
         showToast('Please specify a valid vehicle name and emoji.', 'error');
         return;
       }
-      
+
       updateActiveVehicleProfile(state, name, icon);
       saveAppState(state);
       renderAll(state);
@@ -1054,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Cannot delete the only vehicle profile. Create another profile first.', 'error');
         return;
       }
-      
+
       if (deleteVehicleTextInput) deleteVehicleTextInput.value = '';
       confirmDeleteVehicleBtn?.setAttribute('disabled', 'true');
       deleteVehicleModal?.removeAttribute('hidden');

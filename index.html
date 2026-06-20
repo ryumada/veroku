@@ -129,7 +129,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <h3>Add Maintenance Item</h3>
             <p class="form-desc">Register a component to track its degradation cycle.</p>
 
-             <form id="form-add-service">
+            <form id="form-add-service">
               <div class="form-group">
                 <label for="add-name">Component / Service Name <span class="required-asterisk">*</span></label>
                 <input type="text" id="add-name" required placeholder="e.g., Engine Oil (Oli Mesin)">
@@ -178,7 +178,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
               <div class="form-group-row-2">
                 <div class="form-group">
-                  <label for="add-last-service">Last Serviced Odometer (KM) <span class="required-asterisk">*</span></label>
+                  <label for="add-last-service">Last Serviced Odometer (KM) <span
+                      class="required-asterisk">*</span></label>
                   <input type="number" id="add-last-service" min="0" required placeholder="e.g., 12000">
                 </div>
                 <div class="form-group">
@@ -209,12 +210,14 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                   </select>
                 </div>
                 <div class="view-toggle" id="components-view-toggle">
-                  <button type="button" id="btn-components-table-view" class="view-toggle-btn active" title="Table View">📋 Table</button>
-                  <button type="button" id="btn-components-card-view" class="view-toggle-btn" title="Card View">🗂️ Cards</button>
+                  <button type="button" id="btn-components-table-view" class="view-toggle-btn active"
+                    title="Table View">📋 Table</button>
+                  <button type="button" id="btn-components-card-view" class="view-toggle-btn" title="Card View">🗂️
+                    Cards</button>
                 </div>
               </div>
             </div>
-            
+
             <div id="components-table-container" class="table-responsive">
               <table class="data-table">
                 <thead>
@@ -376,181 +379,183 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
         <div class="settings-content-wrapper">
           <form id="form-settings" class="settings-form">
-          <!-- Active Vehicle Profile Selector -->
-          <div class="card settings-card">
-            <div class="settings-card-header">
-              <span class="checklist-badge weekly">VEHICLE</span>
-              <h3>Active Vehicle Profile</h3>
-            </div>
-            <div class="settings-row">
-              <span class="switch-label">Select the active vehicle profile to display on the dashboard:</span>
-              <div class="vehicle-selector-bar">
-                <select id="select-vehicle" class="vehicle-dropdown"></select>
-                <div class="vehicle-actions-dropdown">
-                  <button type="button" id="btn-vehicle-actions-trigger"
-                    class="action-btn outline-btn dropdown-trigger-btn" title="Vehicle Actions">
-                    <span>☰</span>
-                  </button>
-                  <div id="vehicle-actions-menu" class="dropdown-menu-content" hidden>
-                    <button type="button" id="btn-edit-vehicle-trigger" class="dropdown-menu-item">
-                      <span>✏️</span> Edit Vehicle
+            <!-- Active Vehicle Profile Selector -->
+            <div class="card settings-card">
+              <div class="settings-card-header">
+                <span class="checklist-badge weekly">VEHICLE</span>
+                <h3>Active Vehicle Profile</h3>
+              </div>
+              <div class="settings-row">
+                <span class="switch-label">Select the active vehicle profile to display on the dashboard:</span>
+                <div class="vehicle-selector-bar">
+                  <select id="select-vehicle" class="vehicle-dropdown"></select>
+                  <div class="vehicle-actions-dropdown">
+                    <button type="button" id="btn-vehicle-actions-trigger"
+                      class="action-btn outline-btn dropdown-trigger-btn" title="Vehicle Actions">
+                      <span>☰</span>
                     </button>
-                    <button type="button" id="btn-delete-vehicle-trigger" class="dropdown-menu-item item-danger">
-                      <span>🗑️</span> Delete Vehicle
-                    </button>
+                    <div id="vehicle-actions-menu" class="dropdown-menu-content" hidden>
+                      <button type="button" id="btn-edit-vehicle-trigger" class="dropdown-menu-item">
+                        <span>✏️</span> Edit Vehicle
+                      </button>
+                      <button type="button" id="btn-delete-vehicle-trigger" class="dropdown-menu-item item-danger">
+                        <span>🗑️</span> Delete Vehicle
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <button type="button" id="btn-add-vehicle-trigger" class="action-btn outline-btn add-veh-btn"
-                  title="Add Vehicle">
-                  <span>➕</span>
+                  <button type="button" id="btn-add-vehicle-trigger" class="action-btn outline-btn add-veh-btn"
+                    title="Add Vehicle">
+                    <span>➕</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Reminder Group -->
+            <div class="card settings-card">
+              <div class="settings-card-header">
+                <span class="checklist-badge daily">DAILY</span>
+                <h3>Daily Pre-Ride Reminder</h3>
+              </div>
+              <div class="settings-row">
+                <label class="switch-container">
+                  <input type="checkbox" id="reminder-daily-enabled">
+                  <span class="switch-slider"></span>
+                  <span class="switch-label">Enable Daily Reminder</span>
+                </label>
+              </div>
+              <div class="settings-row reminder-time-row" id="row-daily-time">
+                <label for="reminder-daily-time">Reminder Time</label>
+                <input type="time" id="reminder-daily-time">
+              </div>
+            </div>
+
+            <!-- Weekly Reminder Group -->
+            <div class="card settings-card">
+              <div class="settings-card-header">
+                <span class="checklist-badge weekly">WEEKLY</span>
+                <h3>Weekly Inspection Reminder</h3>
+              </div>
+              <div class="settings-row">
+                <label class="switch-container">
+                  <input type="checkbox" id="reminder-weekly-enabled">
+                  <span class="switch-slider"></span>
+                  <span class="switch-label">Enable Weekly Reminder</span>
+                </label>
+              </div>
+              <div class="settings-row-grid">
+                <div class="settings-row reminder-time-row" id="row-weekly-day">
+                  <label for="reminder-weekly-day">Day of Week</label>
+                  <select id="reminder-weekly-day">
+                    <option value="0">Sunday</option>
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                  </select>
+                </div>
+                <div class="settings-row reminder-time-row" id="row-weekly-time">
+                  <label for="reminder-weekly-time">Reminder Time</label>
+                  <input type="time" id="reminder-weekly-time">
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly Reminder Group -->
+            <div class="card settings-card">
+              <div class="settings-card-header">
+                <span class="checklist-badge monthly">MONTHLY</span>
+                <h3>Monthly Protocol Reminder</h3>
+              </div>
+              <div class="settings-row">
+                <label class="switch-container">
+                  <input type="checkbox" id="reminder-monthly-enabled">
+                  <span class="switch-slider"></span>
+                  <span class="switch-label">Enable Monthly Reminder</span>
+                </label>
+              </div>
+              <div class="settings-row-grid">
+                <div class="settings-row reminder-time-row" id="row-monthly-date">
+                  <label for="reminder-monthly-date">Day of Month</label>
+                  <input type="number" id="reminder-monthly-date" min="1" max="28" placeholder="1">
+                </div>
+                <div class="settings-row reminder-time-row" id="row-monthly-time">
+                  <label for="reminder-monthly-time">Reminder Time</label>
+                  <input type="time" id="reminder-monthly-time">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button type="submit" class="action-btn submit-btn">Save Settings</button>
+            </div>
+          </form>
+
+          <!-- Load Example Data Card -->
+          <div class="card settings-card" id="card-example-data" hidden>
+            <div class="settings-card-header">
+              <span class="checklist-badge daily">DEMO</span>
+              <h3>Load Example Data</h3>
+            </div>
+            <div class="settings-card-body">
+              <p class="settings-card-description">This vehicle profile currently has no maintenance items. Load the
+                standard Honda CB150 Verza maintenance schedule and daily/weekly safety checks to populate the
+                dashboard.
+              </p>
+              <div class="example-data-actions">
+                <button type="button" id="btn-load-example-data" class="action-btn submit-btn">
+                  ⚡ Load Example Data
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Daily Reminder Group -->
-          <div class="card settings-card">
-            <div class="settings-card-header">
-              <span class="checklist-badge daily">DAILY</span>
-              <h3>Daily Pre-Ride Reminder</h3>
-            </div>
-            <div class="settings-row">
-              <label class="switch-container">
-                <input type="checkbox" id="reminder-daily-enabled">
-                <span class="switch-slider"></span>
-                <span class="switch-label">Enable Daily Reminder</span>
-              </label>
-            </div>
-            <div class="settings-row reminder-time-row" id="row-daily-time">
-              <label for="reminder-daily-time">Reminder Time</label>
-              <input type="time" id="reminder-daily-time">
-            </div>
-          </div>
-
-          <!-- Weekly Reminder Group -->
-          <div class="card settings-card">
-            <div class="settings-card-header">
-              <span class="checklist-badge weekly">WEEKLY</span>
-              <h3>Weekly Inspection Reminder</h3>
-            </div>
-            <div class="settings-row">
-              <label class="switch-container">
-                <input type="checkbox" id="reminder-weekly-enabled">
-                <span class="switch-slider"></span>
-                <span class="switch-label">Enable Weekly Reminder</span>
-              </label>
-            </div>
-            <div class="settings-row-grid">
-              <div class="settings-row reminder-time-row" id="row-weekly-day">
-                <label for="reminder-weekly-day">Day of Week</label>
-                <select id="reminder-weekly-day">
-                  <option value="0">Sunday</option>
-                  <option value="1">Monday</option>
-                  <option value="2">Tuesday</option>
-                  <option value="3">Wednesday</option>
-                  <option value="4">Thursday</option>
-                  <option value="5">Friday</option>
-                  <option value="6">Saturday</option>
-                </select>
+          <!-- Data Management Accordion Card -->
+          <div class="card settings-card accordion-card" id="accordion-data-mgmt">
+            <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt">
+              <div class="accordion-title-wrap">
+                <span class="btn-icon">💾</span>
+                <h3 class="accordion-title">Backup &amp; Data Portability</h3>
               </div>
-              <div class="settings-row reminder-time-row" id="row-weekly-time">
-                <label for="reminder-weekly-time">Reminder Time</label>
-                <input type="time" id="reminder-weekly-time">
+              <span class="accordion-arrow">▸</span>
+            </div>
+            <div class="settings-card-body accordion-body" hidden>
+              <p class="settings-card-description">Export your current data as a backup file, or restore from an
+                existing
+                JSON backup. Restoring will overwrite all local settings and database entries.</p>
+              <div class="data-mgmt-actions">
+                <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
+                  <span>📤</span> Export Backup
+                </button>
+                <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
+                  <span>📥</span> Import Backup
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Monthly Reminder Group -->
-          <div class="card settings-card">
-            <div class="settings-card-header">
-              <span class="checklist-badge monthly">MONTHLY</span>
-              <h3>Monthly Protocol Reminder</h3>
-            </div>
-            <div class="settings-row">
-              <label class="switch-container">
-                <input type="checkbox" id="reminder-monthly-enabled">
-                <span class="switch-slider"></span>
-                <span class="switch-label">Enable Monthly Reminder</span>
-              </label>
-            </div>
-            <div class="settings-row-grid">
-              <div class="settings-row reminder-time-row" id="row-monthly-date">
-                <label for="reminder-monthly-date">Day of Month</label>
-                <input type="number" id="reminder-monthly-date" min="1" max="28" placeholder="1">
+          <!-- Danger Zone Accordion Card -->
+          <div class="card settings-card accordion-card danger-zone-card" id="accordion-danger-zone">
+            <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone">
+              <div class="accordion-title-wrap">
+                <span class="btn-icon">⚠️</span>
+                <h3 class="accordion-title danger-title">Danger Zone</h3>
               </div>
-              <div class="settings-row reminder-time-row" id="row-monthly-time">
-                <label for="reminder-monthly-time">Reminder Time</label>
-                <input type="time" id="reminder-monthly-time">
+              <span class="accordion-arrow">▸</span>
+            </div>
+            <div class="settings-card-body accordion-body" hidden>
+              <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and
+                configurations stored in this browser. This process cannot be undone.</p>
+              <div class="data-mgmt-actions">
+                <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
+                  <span>🗑️</span> Delete All Data
+                </button>
               </div>
             </div>
           </div>
-
-          <div class="form-actions-bar">
-            <button type="submit" class="action-btn submit-btn">Save Settings</button>
-          </div>
-        </form>
-
-        <!-- Load Example Data Card -->
-        <div class="card settings-card" id="card-example-data" hidden>
-          <div class="settings-card-header">
-            <span class="checklist-badge daily">DEMO</span>
-            <h3>Load Example Data</h3>
-          </div>
-          <div class="settings-card-body">
-            <p class="settings-card-description">This vehicle profile currently has no maintenance items. Load the
-              standard Honda CB150 Verza maintenance schedule and daily/weekly safety checks to populate the dashboard.
-            </p>
-            <div class="example-data-actions">
-              <button type="button" id="btn-load-example-data" class="action-btn submit-btn">
-                ⚡ Load Example Data
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Data Management Accordion Card -->
-        <div class="card settings-card accordion-card" id="accordion-data-mgmt">
-          <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt">
-            <div class="accordion-title-wrap">
-              <span class="btn-icon">💾</span>
-              <h3 class="accordion-title">Backup &amp; Data Portability</h3>
-            </div>
-            <span class="accordion-arrow">▸</span>
-          </div>
-          <div class="settings-card-body accordion-body" hidden>
-            <p class="settings-card-description">Export your current data as a backup file, or restore from an existing
-              JSON backup. Restoring will overwrite all local settings and database entries.</p>
-            <div class="data-mgmt-actions">
-              <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
-                <span>📤</span> Export Backup
-              </button>
-              <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
-                <span>📥</span> Import Backup
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Danger Zone Accordion Card -->
-        <div class="card settings-card accordion-card danger-zone-card" id="accordion-danger-zone">
-          <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone">
-            <div class="accordion-title-wrap">
-              <span class="btn-icon">⚠️</span>
-              <h3 class="accordion-title danger-title">Danger Zone</h3>
-            </div>
-            <span class="accordion-arrow">▸</span>
-          </div>
-          <div class="settings-card-body accordion-body" hidden>
-            <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and
-              configurations stored in this browser. This process cannot be undone.</p>
-            <div class="data-mgmt-actions">
-              <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
-                <span>🗑️</span> Delete All Data
-              </button>
-            </div>
-          </div>
-        </div>
         </div>
       </section>
 
@@ -572,7 +577,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <label for="edit-name">Component Name <span class="required-asterisk">*</span></label>
           <input type="text" id="edit-name" required>
         </div>
-        
+
         <div class="form-group-row-2">
           <div class="form-group">
             <label for="edit-interval">Maintenance Interval (KM)</label>

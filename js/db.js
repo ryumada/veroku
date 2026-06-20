@@ -160,13 +160,13 @@ function updateActiveVehicleProfile(state, name, icon) {
 function deleteActiveVehicleProfile(state) {
   const activeId = state.active_vehicle_id || 'v-1';
   const vids = Object.keys(state.vehicles || {});
-  
+
   if (vids.length <= 1) {
     return false;
   }
-  
+
   delete state.vehicles[activeId];
-  
+
   // Pick another active vehicle ID
   const remainingVids = Object.keys(state.vehicles);
   state.active_vehicle_id = remainingVids[0];
@@ -184,7 +184,7 @@ function getAppState() {
       return JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
     const parsed = JSON.parse(rawData);
-    
+
     // Deep merge to ensure compatibility and default settings structure
     const state = {
       active_vehicle_id: parsed.active_vehicle_id || DEFAULT_STATE.active_vehicle_id,
@@ -272,17 +272,17 @@ function exportData() {
   const jsonString = JSON.stringify(state, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
+
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   const filename = `vehicle-manager-backup-${dateStr}.json`;
-  
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  
+
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -298,22 +298,22 @@ function importData(file) {
       resolve({ ok: false, error: 'No file selected.' });
       return;
     }
-    
+
     const reader = new FileReader();
-    reader.onload = function(event) {
+    reader.onload = function (event) {
       try {
         const parsed = JSON.parse(event.target.result);
-        
+
         if (!parsed || typeof parsed !== 'object') {
           resolve({ ok: false, error: 'Invalid JSON file: Content must be a JSON object.' });
           return;
         }
-        
+
         if (!parsed.active_vehicle_id || !parsed.vehicles || typeof parsed.vehicles !== 'object') {
           resolve({ ok: false, error: 'Invalid schema: Missing multi-vehicle structures.' });
           return;
         }
-        
+
         for (const vid in parsed.vehicles) {
           const veh = parsed.vehicles[vid];
           if (!veh.id || !veh.name || !veh.meta || !Array.isArray(veh.services) || !veh.routine_checks) {
@@ -321,14 +321,14 @@ function importData(file) {
             return;
           }
         }
-        
+
         saveAppState(parsed);
         resolve({ ok: true });
       } catch (e) {
         resolve({ ok: false, error: `JSON Parse error: ${e.message}` });
       }
     };
-    reader.onerror = function() {
+    reader.onerror = function () {
       resolve({ ok: false, error: 'File reading failed.' });
     };
     reader.readAsText(file);
@@ -348,11 +348,11 @@ function markServiceDone(serviceId, cost, notes) {
   if (service) {
     service.last_service_odometer = vehicle.meta.current_odometer;
     service.last_service_date = new Date().toISOString().split('T')[0];
-    
+
     // Clear one-time overrides
     service.one_time_limit_km = null;
     service.one_time_limit_date = null;
-    
+
     if (!vehicle.service_history) {
       vehicle.service_history = [];
     }
@@ -365,7 +365,7 @@ function markServiceDone(serviceId, cost, notes) {
       timestamp: Date.now(),
       notes: notes || ''
     });
-    
+
     saveAppState(state);
   }
 }

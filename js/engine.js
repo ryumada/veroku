@@ -40,7 +40,7 @@ function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
       cssClass: 'status--critical'
     };
   }
-  
+
   const warningLimit = warningThreshold !== undefined && warningThreshold > 0
     ? Math.max(0, intervalKm - warningThreshold)
     : 200;
@@ -113,7 +113,7 @@ function computeAllServices(services, currentOdometer) {
     let kmStatus = 'status--optimal';
 
     const hasKmInterval = typeof service.interval_km === 'number' && service.interval_km > 0;
-    
+
     if (hasKmInterval || service.one_time_limit_km) {
       if (service.one_time_limit_km) {
         nextOdometer = Number(service.one_time_limit_km);
@@ -121,7 +121,7 @@ function computeAllServices(services, currentOdometer) {
         nextOdometer = (Number(service.last_service_odometer) || 0) + Number(service.interval_km);
       }
       deltaRemainingKm = nextOdometer - currentOdometer;
-      
+
       if (deltaRemainingKm <= 0) {
         kmStatus = 'status--critical';
       } else {
@@ -140,7 +140,7 @@ function computeAllServices(services, currentOdometer) {
     let dateStatus = 'status--optimal';
 
     const hasTimeInterval = typeof service.interval_time_val === 'number' && service.interval_time_val > 0;
-    
+
     if (hasTimeInterval || service.one_time_limit_date) {
       const lastDateStr = service.last_service_date || new Date().toISOString().split('T')[0];
       if (service.one_time_limit_date) {
@@ -149,10 +149,10 @@ function computeAllServices(services, currentOdometer) {
         nextDueDate = addTimeToDate(lastDateStr, service.interval_time_val, service.interval_time_unit);
       }
       nextDueDate.setHours(0, 0, 0, 0);
-      
+
       const diffMs = nextDueDate.getTime() - today.getTime();
       deltaRemainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      
+
       if (deltaRemainingDays <= 0) {
         dateStatus = 'status--critical';
       } else {
@@ -169,7 +169,7 @@ function computeAllServices(services, currentOdometer) {
     // 3. Combined status
     let finalStatusClass = 'status--optimal';
     let finalStatusLabel = '✅ Optimal';
-    
+
     if (kmStatus === 'status--critical' || dateStatus === 'status--critical') {
       finalStatusClass = 'status--critical';
       finalStatusLabel = '🚨 OVERDUE!';
@@ -186,7 +186,7 @@ function computeAllServices(services, currentOdometer) {
       const kmRatio = deltaRemainingKm / (Number(service.interval_km) || 1);
       const approxDaysInterval = service.interval_time_val ? getWarningDays(service.interval_time_val, service.interval_time_unit) : 30;
       const daysRatio = deltaRemainingDays / (approxDaysInterval || 1);
-      
+
       if (kmRatio < daysRatio) {
         displayDeltaText = deltaRemainingKm <= 0 ? `${Math.abs(deltaRemainingKm)} KM OVERDUE` : `${deltaRemainingKm} KM Remaining`;
         sortMetric = deltaRemainingKm;
@@ -232,15 +232,15 @@ function sortByPriority(enrichedServices) {
     'status--warning': 2,
     'status--optimal': 1
   };
-  
+
   return [...enrichedServices].sort((a, b) => {
     const weightA = statusWeight[a.status.cssClass] || 0;
     const weightB = statusWeight[b.status.cssClass] || 0;
-    
+
     if (weightA !== weightB) {
       return weightB - weightA;
     }
-    
+
     return (a.sortMetric || 0) - (b.sortMetric || 0);
   });
 }
@@ -253,7 +253,7 @@ function sortByPriority(enrichedServices) {
 function computeCostSummary(history) {
   const summary = { total: 0, perService: {} };
   if (!Array.isArray(history)) return summary;
-  
+
   history.forEach(item => {
     const cost = Number(item.cost) || 0;
     summary.total += cost;
@@ -261,7 +261,7 @@ function computeCostSummary(history) {
       summary.perService[item.service_id] = (summary.perService[item.service_id] || 0) + cost;
     }
   });
-  
+
   return summary;
 }
 
@@ -272,18 +272,18 @@ function computeCostSummary(history) {
  */
 function computeDailyAvgMileage(log) {
   if (!Array.isArray(log) || log.length < 2) return 0;
-  
+
   // Sort log by timestamp ascending
   const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp);
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
-  
+
   const odoDiff = (last.odometer || 0) - (first.odometer || 0);
   const timeDiffMs = last.timestamp - first.timestamp;
   const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24);
-  
+
   if (timeDiffDays < 0.1 || odoDiff <= 0) return 0;
-  
+
   return Number((odoDiff / timeDiffDays).toFixed(1));
 }
 
@@ -298,28 +298,28 @@ function computeStreakUpdate(meta, dailyChecks) {
     streak_days: meta.streak_days || 0,
     streak_last_completed_date: meta.streak_last_completed_date || ''
   };
-  
+
   if (!Array.isArray(dailyChecks) || dailyChecks.length === 0) return updated;
-  
+
   const allChecked = dailyChecks.every(c => c.checked);
   if (!allChecked) return updated;
-  
+
   const todayStr = new Date().toISOString().split('T')[0];
   if (updated.streak_last_completed_date === todayStr) {
     return updated; // Already logged today
   }
-  
+
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
-  
+
   if (updated.streak_last_completed_date === yesterdayStr) {
     updated.streak_days += 1;
   } else {
     updated.streak_days = 1;
   }
   updated.streak_last_completed_date = todayStr;
-  
+
   return updated;
 }
 
@@ -332,11 +332,11 @@ function computeStreakUpdate(meta, dailyChecks) {
 function sortServices(services, criteria) {
   if (!Array.isArray(services)) return [];
   const list = [...services];
-  
+
   if (criteria === 'priority') {
     return sortByPriority(list);
   }
-  
+
   return list.sort((a, b) => {
     switch (criteria) {
       case 'name': {

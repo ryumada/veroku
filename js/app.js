@@ -17,6 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
   window.historyActiveDate = new Date();
   window.odoHistoryPage = 0;
 
+  // Initialize sorting preferences from localStorage
+  window.dashboardSortMode = localStorage.getItem('v_dashboard_sort_mode') || 'priority';
+  window.componentsSortMode = localStorage.getItem('v_components_sort_mode') || 'default';
+
+  // Sync sort select element dropdown values
+  const dashboardSortSelect = document.getElementById('select-dashboard-sort');
+  if (dashboardSortSelect) {
+    dashboardSortSelect.value = window.dashboardSortMode;
+  }
+  const componentsSortSelect = document.getElementById('select-components-sort');
+  if (componentsSortSelect) {
+    componentsSortSelect.value = window.componentsSortMode;
+  }
+
   // 2. Perform First Paint
   const addLastServiceDate = document.getElementById('add-last-service-date');
   if (addLastServiceDate) {
@@ -62,6 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.componentsViewMode = 'cards';
     localStorage.setItem('v_components_view_mode', 'cards');
     window.updateComponentsViewVisibility();
+  });
+
+  // ==========================================================================
+  // SORTING CONTROLS WIRING
+  // ==========================================================================
+  document.getElementById('select-dashboard-sort')?.addEventListener('change', (e) => {
+    window.dashboardSortMode = e.target.value;
+    localStorage.setItem('v_dashboard_sort_mode', e.target.value);
+    renderAll(state);
+  });
+
+  document.getElementById('select-components-sort')?.addEventListener('change', (e) => {
+    window.componentsSortMode = e.target.value;
+    localStorage.setItem('v_components_sort_mode', e.target.value);
+    renderAll(state);
   });
 
   // ==========================================================================

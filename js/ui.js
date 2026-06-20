@@ -280,11 +280,12 @@ function renderServiceTable(state) {
   // Active odometer to compute dynamic status for config list view
   const currentOdo = state.meta?.current_odometer || 0;
   const enriched = computeAllServices(services, currentOdo);
+  const sortedEnriched = sortServices(enriched, window.componentsSortMode || 'default');
 
   let tableHtml = '';
   let cardsHtml = '';
 
-  enriched.forEach(s => {
+  sortedEnriched.forEach(s => {
     // Formatting Intervals
     let intervalText = '';
     if (s.interval_km && s.interval_time_val) {
@@ -738,7 +739,7 @@ function renderAll(state) {
   
   // Compute parts deltas
   const enriched = computeAllServices(activeVeh.services, activeVeh.meta.current_odometer);
-  const sorted = sortByPriority(enriched);
+  const sorted = sortServices(enriched, window.dashboardSortMode || 'priority');
   
   renderServiceCards(sorted, activeVeh);
   renderServiceTable(scopedState);

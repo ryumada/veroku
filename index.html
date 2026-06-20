@@ -95,9 +95,23 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         </div>
 
         <!-- Dynamic Service Component Trackers -->
-        <div class="section-header">
-          <h2>PART DEGRADATION TRACKERS</h2>
-          <span class="subtitle">Sorted by critical service priority</span>
+        <div class="dashboard-trackers-header">
+          <div class="section-header">
+            <h2>PART DEGRADATION TRACKERS</h2>
+            <span class="subtitle">Real-time status monitoring</span>
+          </div>
+          <div class="sort-control">
+            <label for="select-dashboard-sort">Sort By:</label>
+            <select id="select-dashboard-sort" class="sort-dropdown">
+              <option value="priority">Priority (Default)</option>
+              <option value="name">Name</option>
+              <option value="interval_km">Interval (KM)</option>
+              <option value="next_due_km">Next Due (KM)</option>
+              <option value="next_due_date">Next Due (Date)</option>
+              <option value="last_service_km">Last Service (KM)</option>
+              <option value="last_service_date">Last Service (Date)</option>
+            </select>
+          </div>
         </div>
 
         <div id="service-cards" class="service-cards-grid">
@@ -181,9 +195,23 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <div class="card table-card">
             <div class="components-header">
               <h3>Registered Components</h3>
-              <div class="view-toggle" id="components-view-toggle">
-                <button type="button" id="btn-components-table-view" class="view-toggle-btn active" title="Table View">📋 Table</button>
-                <button type="button" id="btn-components-card-view" class="view-toggle-btn" title="Card View">🗂️ Cards</button>
+              <div class="components-controls">
+                <div class="sort-control">
+                  <label for="select-components-sort">Sort:</label>
+                  <select id="select-components-sort" class="sort-dropdown">
+                    <option value="default">Default</option>
+                    <option value="name">Name</option>
+                    <option value="interval_km">Interval (KM)</option>
+                    <option value="next_due_km">Next Due (KM)</option>
+                    <option value="next_due_date">Next Due (Date)</option>
+                    <option value="last_service_km">Last Service (KM)</option>
+                    <option value="last_service_date">Last Service (Date)</option>
+                  </select>
+                </div>
+                <div class="view-toggle" id="components-view-toggle">
+                  <button type="button" id="btn-components-table-view" class="view-toggle-btn active" title="Table View">📋 Table</button>
+                  <button type="button" id="btn-components-card-view" class="view-toggle-btn" title="Card View">🗂️ Cards</button>
+                </div>
               </div>
             </div>
             

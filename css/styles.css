@@ -1408,6 +1408,60 @@ body {
 }
 
 /* ==========================================================================
+   9.5. SERVICE SORTING CONTROLS
+   ========================================================================== */
+.dashboard-trackers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.components-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-control label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sort-dropdown {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 6px 12px;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  outline: none;
+}
+
+:root[data-theme="light"] .sort-dropdown {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: var(--border-light);
+  color: var(--text-main);
+}
+
+.sort-dropdown:focus {
+  border-color: var(--border-focus);
+}
+
+/* ==========================================================================
    10. RESPONSIVE MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 900px) {

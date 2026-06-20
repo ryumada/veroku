@@ -115,27 +115,59 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <h3>Add Maintenance Item</h3>
             <p class="form-desc">Register a component to track its degradation cycle.</p>
 
-            <form id="form-add-service">
+             <form id="form-add-service">
               <div class="form-group">
-                <label for="add-name">Component / Service Name</label>
+                <label for="add-name">Component / Service Name <span class="required-asterisk">*</span></label>
                 <input type="text" id="add-name" required placeholder="e.g., Engine Oil (Oli Mesin)">
               </div>
 
-              <div class="form-group">
-                <label for="add-interval">Maintenance Interval (KM)</label>
-                <input type="number" id="add-interval" min="1" required placeholder="e.g., 4000">
+              <div class="form-group-row-2">
+                <div class="form-group">
+                  <label for="add-interval">Maintenance Interval (KM)</label>
+                  <input type="number" id="add-interval" min="1" placeholder="e.g., 4000">
+                </div>
+                <div class="form-group">
+                  <label for="add-warning-threshold">Warning Threshold (KM)</label>
+                  <input type="number" id="add-warning-threshold" min="0" placeholder="e.g., 3800">
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="add-warning-threshold">Warning Threshold (KM) <span class="lbl-desc">(e.g. warn at 3000 KM
-                    for a 3500 KM target)</span></label>
-                <input type="number" id="add-warning-threshold" min="0"
-                  placeholder="e.g., 3000 (Defaults to 200 KM remaining)">
+              <div class="form-group-row-3">
+                <div class="form-group">
+                  <label for="add-interval-time-val">Time Interval</label>
+                  <input type="number" id="add-interval-time-val" min="1" placeholder="e.g., 6">
+                </div>
+                <div class="form-group">
+                  <label for="add-interval-time-unit">Unit</label>
+                  <select id="add-interval-time-unit">
+                    <option value="days">Days</option>
+                    <option value="months" selected>Months</option>
+                    <option value="years">Years</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="add-warning-time-val">Warning (Time Remain)</label>
+                  <input type="number" id="add-warning-time-val" min="1" placeholder="e.g., 15">
+                </div>
+                <div class="form-group">
+                  <label for="add-warning-time-unit">Unit</label>
+                  <select id="add-warning-time-unit">
+                    <option value="days" selected>Days</option>
+                    <option value="months">Months</option>
+                    <option value="years">Years</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="add-last-service">Last Serviced Odometer (KM)</label>
-                <input type="number" id="add-last-service" min="0" required placeholder="e.g., 12000">
+              <div class="form-group-row-2">
+                <div class="form-group">
+                  <label for="add-last-service">Last Serviced Odometer (KM) <span class="required-asterisk">*</span></label>
+                  <input type="number" id="add-last-service" min="0" required placeholder="e.g., 12000">
+                </div>
+                <div class="form-group">
+                  <label for="add-last-service-date">Last Serviced Date <span class="required-asterisk">*</span></label>
+                  <input type="date" id="add-last-service-date" required>
+                </div>
               </div>
 
               <button type="submit" class="submit-btn">Register Component</button>
@@ -485,24 +517,76 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
       <form id="form-edit-service">
         <input type="hidden" id="edit-id">
         <div class="form-group">
-          <label for="edit-name">Component Name</label>
+          <label for="edit-name">Component Name <span class="required-asterisk">*</span></label>
           <input type="text" id="edit-name" required>
         </div>
-        <div class="form-group">
-          <label for="edit-interval">Maintenance Interval (KM)</label>
-          <input type="number" id="edit-interval" min="1" required>
+        
+        <div class="form-group-row-2">
+          <div class="form-group">
+            <label for="edit-interval">Maintenance Interval (KM)</label>
+            <input type="number" id="edit-interval" min="1">
+          </div>
+          <div class="form-group">
+            <label for="edit-warning-threshold">Warning Threshold (KM)</label>
+            <input type="number" id="edit-warning-threshold" min="0">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="edit-warning-threshold">Warning Threshold (KM) <span class="lbl-desc">(e.g. warn at 3000 KM for a
-              3500 KM target)</span></label>
-          <input type="number" id="edit-warning-threshold" min="0"
-            placeholder="e.g., 3000 (Defaults to 200 KM remaining)">
+
+        <div class="form-group-row-3">
+          <div class="form-group">
+            <label for="edit-interval-time-val">Time Interval</label>
+            <input type="number" id="edit-interval-time-val" min="1">
+          </div>
+          <div class="form-group">
+            <label for="edit-interval-time-unit">Unit</label>
+            <select id="edit-interval-time-unit">
+              <option value="days">Days</option>
+              <option value="months">Months</option>
+              <option value="years">Years</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-warning-time-val">Warning (Time Remain)</label>
+            <input type="number" id="edit-warning-time-val" min="1">
+          </div>
+          <div class="form-group">
+            <label for="edit-warning-time-unit">Unit</label>
+            <select id="edit-warning-time-unit">
+              <option value="days">Days</option>
+              <option value="months">Months</option>
+              <option value="years">Years</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="edit-last-service">Last Serviced Odometer (KM)</label>
-          <input type="number" id="edit-last-service" min="0" required>
+
+        <div class="form-group-row-2">
+          <div class="form-group">
+            <label for="edit-last-service">Last Serviced Odometer (KM) <span class="required-asterisk">*</span></label>
+            <input type="number" id="edit-last-service" min="0" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-last-service-date">Last Serviced Date <span class="required-asterisk">*</span></label>
+            <input type="date" id="edit-last-service-date" required>
+          </div>
         </div>
-        <div class="modal-actions">
+
+        <div class="form-divider"></div>
+        <div class="override-section">
+          <h4>One-Time Next Due Overrides</h4>
+          <p class="section-desc">Applies to current cycle only. Automatically cleared when marked Done.</p>
+          <div class="form-group-row-2" style="margin-top: 12px;">
+            <div class="form-group">
+              <label for="edit-one-time-limit-km">One-Time Odometer Limit (KM)</label>
+              <input type="number" id="edit-one-time-limit-km" min="0" placeholder="e.g., 15000 (Next Due KM)">
+            </div>
+            <div class="form-group">
+              <label for="edit-one-time-limit-date">One-Time Due Date Limit</label>
+              <input type="date" id="edit-one-time-limit-date">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 24px;">
           <button type="button" class="action-btn outline-btn" id="btn-cancel-edit">Cancel</button>
           <button type="submit" class="action-btn submit-btn">Save Changes</button>
         </div>

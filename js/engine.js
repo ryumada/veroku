@@ -61,6 +61,41 @@ function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
 }
 
 /**
+ * Add value and unit duration to a date string.
+ * @param {string} dateStr
+ * @param {number} value
+ * @param {string} unit
+ * @returns {Date}
+ */
+function addTimeToDate(dateStr, value, unit) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return new Date();
+  const val = Number(value) || 0;
+  if (unit === 'days') {
+    d.setDate(d.getDate() + val);
+  } else if (unit === 'months') {
+    d.setMonth(d.getMonth() + val);
+  } else if (unit === 'years') {
+    d.setFullYear(d.getFullYear() + val);
+  }
+  return d;
+}
+
+/**
+ * Get approximate number of warning days for time thresholds.
+ * @param {number} value
+ * @param {string} unit
+ * @returns {number}
+ */
+function getWarningDays(value, unit) {
+  const val = Number(value) || 0;
+  if (unit === 'days') return val;
+  if (unit === 'months') return val * 30;
+  if (unit === 'years') return val * 365;
+  return 7; // Default warning 7 days
+}
+
+/**
  * Enrich a list of raw services with calculated attributes.
  * @param {Array<object>} services
  * @param {number} currentOdometer
@@ -68,15 +103,118 @@ function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
  */
 function computeAllServices(services, currentOdometer) {
   if (!Array.isArray(services)) return [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return services.map(service => {
-    const nextOdometer = computeNextOdometer(service.last_service_odometer, service.interval_km);
-    const deltaRemaining = computeRemainingDelta(currentOdometer, nextOdometer);
-    const status = classifyStatus(deltaRemaining, service.interval_km, service.warning_threshold);
+    // 1. KM calculations
+    let nextOdometer = null;
+    let deltaRemainingKm = null;
+    let kmStatus = 'status--optimal';
+
+    const hasKmInterval = typeof service.interval_km === 'number' && service.interval_km > 0;
+    
+    if (hasKmInterval || service.one_time_limit_km) {
+      if (service.one_time_limit_km) {
+        nextOdometer = Number(service.one_time_limit_km);
+      } else {
+        nextOdometer = (Number(service.last_service_odometer) || 0) + Number(service.interval_km);
+      }
+      deltaRemainingKm = nextOdometer - currentOdometer;
+      
+      if (deltaRemainingKm <= 0) {
+        kmStatus = 'status--critical';
+      } else {
+        const warnLimitKm = service.warning_threshold !== undefined && service.warning_threshold > 0
+          ? Math.max(0, Number(service.interval_km) - Number(service.warning_threshold))
+          : 200;
+        if (deltaRemainingKm <= warnLimitKm) {
+          kmStatus = 'status--warning';
+        }
+      }
+    }
+
+    // 2. Date calculations
+    let nextDueDate = null;
+    let deltaRemainingDays = null;
+    let dateStatus = 'status--optimal';
+
+    const hasTimeInterval = typeof service.interval_time_val === 'number' && service.interval_time_val > 0;
+    
+    if (hasTimeInterval || service.one_time_limit_date) {
+      const lastDateStr = service.last_service_date || new Date().toISOString().split('T')[0];
+      if (service.one_time_limit_date) {
+        nextDueDate = new Date(service.one_time_limit_date);
+      } else {
+        nextDueDate = addTimeToDate(lastDateStr, service.interval_time_val, service.interval_time_unit);
+      }
+      nextDueDate.setHours(0, 0, 0, 0);
+      
+      const diffMs = nextDueDate.getTime() - today.getTime();
+      deltaRemainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (deltaRemainingDays <= 0) {
+        dateStatus = 'status--critical';
+      } else {
+        let warnLimitDays = 7; // Default 7 days
+        if (typeof service.warning_time_val === 'number' && service.warning_time_val > 0) {
+          warnLimitDays = getWarningDays(service.warning_time_val, service.warning_time_unit);
+        }
+        if (deltaRemainingDays <= warnLimitDays) {
+          dateStatus = 'status--warning';
+        }
+      }
+    }
+
+    // 3. Combined status
+    let finalStatusClass = 'status--optimal';
+    let finalStatusLabel = '✅ Optimal';
+    
+    if (kmStatus === 'status--critical' || dateStatus === 'status--critical') {
+      finalStatusClass = 'status--critical';
+      finalStatusLabel = '🚨 OVERDUE!';
+    } else if (kmStatus === 'status--warning' || dateStatus === 'status--warning') {
+      finalStatusClass = 'status--warning';
+      finalStatusLabel = '⚠️ Due Soon';
+    }
+
+    let displayDeltaText = '';
+    let sortMetric = 999999;
+
+    if (deltaRemainingKm !== null && deltaRemainingDays !== null) {
+      // Both active: compare ratio of remaining values to see which limit is tighter
+      const kmRatio = deltaRemainingKm / (Number(service.interval_km) || 1);
+      const approxDaysInterval = service.interval_time_val ? getWarningDays(service.interval_time_val, service.interval_time_unit) : 30;
+      const daysRatio = deltaRemainingDays / (approxDaysInterval || 1);
+      
+      if (kmRatio < daysRatio) {
+        displayDeltaText = deltaRemainingKm <= 0 ? `${Math.abs(deltaRemainingKm)} KM OVERDUE` : `${deltaRemainingKm} KM Remaining`;
+        sortMetric = deltaRemainingKm;
+      } else {
+        displayDeltaText = deltaRemainingDays <= 0 ? `${Math.abs(deltaRemainingDays)} days OVERDUE` : `${deltaRemainingDays} days Remaining`;
+        sortMetric = deltaRemainingDays * 10;
+      }
+    } else if (deltaRemainingKm !== null) {
+      displayDeltaText = deltaRemainingKm <= 0 ? `${Math.abs(deltaRemainingKm)} KM OVERDUE` : `${deltaRemainingKm} KM Remaining`;
+      sortMetric = deltaRemainingKm;
+    } else if (deltaRemainingDays !== null) {
+      displayDeltaText = deltaRemainingDays <= 0 ? `${Math.abs(deltaRemainingDays)} days OVERDUE` : `${deltaRemainingDays} days Remaining`;
+      sortMetric = deltaRemainingDays * 10;
+    }
+
     return {
       ...service,
       nextOdometer,
-      deltaRemaining,
-      status
+      nextDueDate: nextDueDate ? nextDueDate.toISOString().split('T')[0] : null,
+      deltaRemainingKm,
+      deltaRemainingDays,
+      displayDeltaText,
+      sortMetric,
+      status: {
+        label: finalStatusLabel,
+        emoji: finalStatusClass === 'status--critical' ? '🚨' : (finalStatusClass === 'status--warning' ? '⚠️' : '✅'),
+        cssClass: finalStatusClass
+      }
     };
   });
 }
@@ -100,11 +238,10 @@ function sortByPriority(enrichedServices) {
     const weightB = statusWeight[b.status.cssClass] || 0;
     
     if (weightA !== weightB) {
-      return weightB - weightA; // Higher weight first
+      return weightB - weightA;
     }
     
-    // Within the same status, sort by deltaRemaining ascending (closest to limit first)
-    return a.deltaRemaining - b.deltaRemaining;
+    return (a.sortMetric || 0) - (b.sortMetric || 0);
   });
 }
 

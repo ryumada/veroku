@@ -141,22 +141,51 @@ function renderServiceCards(enrichedServices, activeVeh) {
     const isCritical = s.status.cssClass === 'status--critical';
     const isWarning = s.status.cssClass === 'status--warning';
     
-    let deltaText = '';
-    if (s.deltaRemaining <= 0) {
-      deltaText = `${Math.abs(s.deltaRemaining)} KM OVERDUE`;
-    } else {
-      deltaText = `${s.deltaRemaining} KM Remaining`;
-    }
+    const deltaText = s.displayDeltaText;
 
     let forecastHtml = '';
-    if (avgMileage > 0 && s.deltaRemaining > 0) {
-      const daysUntil = Math.max(0, Math.ceil(s.deltaRemaining / avgMileage));
+    if (s.deltaRemainingKm !== null && s.deltaRemainingKm <= 0) {
+      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due (KM)! Service immediately.</div>`;
+    } else if (s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0) {
+      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due (Time)! Service immediately.</div>`;
+    } else if (avgMileage > 0 && s.deltaRemainingKm !== null && s.deltaRemainingKm > 0) {
+      const daysUntil = Math.max(0, Math.ceil(s.deltaRemainingKm / avgMileage));
       forecastHtml = `<div class="forecast-label">⏳ Est. ${daysUntil} days remaining (~${avgMileage} KM/day)</div>`;
-    } else if (s.deltaRemaining <= 0) {
-      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due! Service immediately.</div>`;
     } else {
       forecastHtml = `<div class="forecast-label">⏳ Forecast requires at least 2 odometer readings</div>`;
     }
+
+    let intervalText = '';
+    if (s.interval_km && s.interval_time_val) {
+      intervalText = `${s.interval_km} KM / ${s.interval_time_val} ${s.interval_time_unit}`;
+    } else if (s.interval_km) {
+      intervalText = `${s.interval_km} KM`;
+    } else if (s.interval_time_val) {
+      intervalText = `${s.interval_time_val} ${s.interval_time_unit}`;
+    } else {
+      intervalText = '-';
+    }
+
+    let lastServiceText = `${s.last_service_odometer} KM`;
+    if (s.last_service_date) {
+      lastServiceText += ` (${s.last_service_date})`;
+    }
+
+    let nextExpectedText = '';
+    if (s.nextOdometer !== null) {
+      nextExpectedText += `${s.nextOdometer} KM`;
+      if (s.one_time_limit_km) {
+        nextExpectedText += ' <span style="color: var(--status-warning);">[Override]</span>';
+      }
+    }
+    if (s.nextDueDate) {
+      if (nextExpectedText) nextExpectedText += ' / ';
+      nextExpectedText += s.nextDueDate;
+      if (s.one_time_limit_date) {
+        nextExpectedText += ' <span style="color: var(--status-warning);">[Override]</span>';
+      }
+    }
+    if (!nextExpectedText) nextExpectedText = '-';
 
     html += `
       <div class="tracker-card ${s.status.cssClass}">
@@ -174,15 +203,15 @@ function renderServiceCards(enrichedServices, activeVeh) {
           
           <div class="tracker-stat">
             <span class="lbl">Interval Limit</span>
-            <span class="val">${s.interval_km} KM</span>
+            <span class="val">${intervalText}</span>
           </div>
           <div class="tracker-stat">
             <span class="lbl">Last Serviced At</span>
-            <span class="val">${s.last_service_odometer} KM</span>
+            <span class="val">${lastServiceText}</span>
           </div>
           <div class="tracker-stat">
             <span class="lbl">Next Expected At</span>
-            <span class="val">${s.nextOdometer} KM</span>
+            <span class="val">${nextExpectedText}</span>
           </div>
         </div>
         
@@ -248,21 +277,69 @@ function renderServiceTable(state) {
     return;
   }
 
+  // Active odometer to compute dynamic status for config list view
+  const currentOdo = state.meta?.current_odometer || 0;
+  const enriched = computeAllServices(services, currentOdo);
+
   let tableHtml = '';
   let cardsHtml = '';
 
-  services.forEach(s => {
-    const nextKm = s.last_service_odometer + s.interval_km;
-    const warnKmText = s.warning_threshold ? `${s.warning_threshold} KM` : 'Default';
-    
+  enriched.forEach(s => {
+    // Formatting Intervals
+    let intervalText = '';
+    if (s.interval_km && s.interval_time_val) {
+      intervalText = `${s.interval_km} KM / ${s.interval_time_val} ${s.interval_time_unit}`;
+    } else if (s.interval_km) {
+      intervalText = `${s.interval_km} KM`;
+    } else if (s.interval_time_val) {
+      intervalText = `${s.interval_time_val} ${s.interval_time_unit}`;
+    } else {
+      intervalText = '-';
+    }
+
+    // Formatting Warning Threshold
+    let warningText = '';
+    if (s.warning_threshold && s.warning_time_val) {
+      warningText = `${s.warning_threshold} KM / ${s.warning_time_val} ${s.warning_time_unit}`;
+    } else if (s.warning_threshold) {
+      warningText = `${s.warning_threshold} KM`;
+    } else if (s.warning_time_val) {
+      warningText = `${s.warning_time_val} ${s.warning_time_unit}`;
+    } else {
+      warningText = 'Default';
+    }
+
+    // Formatting Last Service
+    let lastServiceText = `${s.last_service_odometer} KM`;
+    if (s.last_service_date) {
+      lastServiceText += `<br><span class="lbl-desc">${s.last_service_date}</span>`;
+    }
+
+    // Formatting Next Expected
+    let nextExpectedText = '';
+    if (s.nextOdometer !== null) {
+      nextExpectedText += `${s.nextOdometer} KM`;
+      if (s.one_time_limit_km) {
+        nextExpectedText += ` <span style="color: var(--status-warning);" title="One-time Odometer Override">*</span>`;
+      }
+    }
+    if (s.nextDueDate) {
+      if (nextExpectedText) nextExpectedText += '<br>';
+      nextExpectedText += `<span class="lbl-desc">${s.nextDueDate}</span>`;
+      if (s.one_time_limit_date) {
+        nextExpectedText += ` <span style="color: var(--status-warning);" title="One-time Date Override">*</span>`;
+      }
+    }
+    if (!nextExpectedText) nextExpectedText = '-';
+
     // Table Row HTML
     tableHtml += `
       <tr>
         <td><strong>${s.name}</strong></td>
-        <td class="cell-display">${s.interval_km} KM</td>
-        <td class="cell-display">${warnKmText}</td>
-        <td class="cell-display">${s.last_service_odometer} KM</td>
-        <td class="cell-display">${nextKm} KM</td>
+        <td class="cell-display">${intervalText}</td>
+        <td class="cell-display">${warningText}</td>
+        <td class="cell-display">${lastServiceText}</td>
+        <td class="cell-display">${nextExpectedText}</td>
         <td>
           <div class="table-actions">
             <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>
@@ -272,7 +349,7 @@ function renderServiceTable(state) {
       </tr>
     `;
 
-    // Card HTML
+    // Card HTML (for mobile / list)
     cardsHtml += `
       <div class="component-card">
         <div class="component-card-header">
@@ -285,19 +362,19 @@ function renderServiceTable(state) {
         <div class="component-card-body">
           <div class="component-card-row">
             <span class="lbl">Interval</span>
-            <span class="val">${s.interval_km} KM</span>
+            <span class="val">${intervalText}</span>
           </div>
           <div class="component-card-row">
-            <span class="lbl">Warning At</span>
-            <span class="val">${warnKmText}</span>
+            <span class="lbl">Warning Threshold</span>
+            <span class="val">${warningText}</span>
           </div>
           <div class="component-card-row">
             <span class="lbl">Last Service</span>
-            <span class="val">${s.last_service_odometer} KM</span>
+            <span class="val">${s.last_service_odometer} KM ${s.last_service_date ? `(${s.last_service_date})` : ''}</span>
           </div>
           <div class="component-card-row">
-            <span class="lbl">Next Due</span>
-            <span class="val">${nextKm} KM</span>
+            <span class="lbl">Next Expected</span>
+            <span class="val">${s.nextOdometer !== null ? s.nextOdometer + ' KM' : ''} ${s.one_time_limit_km ? '[*]' : ''} ${s.nextDueDate ? `/ ${s.nextDueDate}` : ''} ${s.one_time_limit_date ? '[*]' : ''}</span>
           </div>
         </div>
       </div>
@@ -687,9 +764,24 @@ function showModal(service) {
 
   document.getElementById('edit-id').value = service.id;
   document.getElementById('edit-name').value = service.name;
-  document.getElementById('edit-interval').value = service.interval_km;
+  document.getElementById('edit-interval').value = service.interval_km || '';
   document.getElementById('edit-warning-threshold').value = service.warning_threshold !== undefined ? service.warning_threshold : '';
+  
+  // Populate new time fields
+  document.getElementById('edit-interval-time-val').value = service.interval_time_val || '';
+  document.getElementById('edit-interval-time-unit').value = service.interval_time_unit || 'months';
+  document.getElementById('edit-warning-time-val').value = service.warning_time_val || '';
+  document.getElementById('edit-warning-time-unit').value = service.warning_time_unit || 'days';
+  
+  // Last service odometer and date
   document.getElementById('edit-last-service').value = service.last_service_odometer;
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('edit-last-service-date').value = service.last_service_date || todayStr;
+
+  // One-time overrides
+  document.getElementById('edit-one-time-limit-km').value = service.one_time_limit_km || '';
+  document.getElementById('edit-one-time-limit-date').value = service.one_time_limit_date || '';
 
   modal.removeAttribute('hidden');
 }

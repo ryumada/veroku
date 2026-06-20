@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.odoHistoryPage = 0;
 
   // 2. Perform First Paint
+  const addLastServiceDate = document.getElementById('add-last-service-date');
+  if (addLastServiceDate) {
+    addLastServiceDate.value = new Date().toISOString().split('T')[0];
+  }
   renderAll(state);
 
   // ==========================================================================
@@ -104,14 +108,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const intervalInput = document.getElementById('add-interval');
       const warningInput = document.getElementById('add-warning-threshold');
       const lastServiceInput = document.getElementById('add-last-service');
+      const lastServiceDateInput = document.getElementById('add-last-service-date');
+      
+      const intervalTimeValInput = document.getElementById('add-interval-time-val');
+      const intervalTimeUnitSelect = document.getElementById('add-interval-time-unit');
+      const warningTimeValInput = document.getElementById('add-warning-time-val');
+      const warningTimeUnitSelect = document.getElementById('add-warning-time-unit');
 
       const name = nameInput.value.trim();
-      const interval = parseInt(intervalInput.value, 10);
-      const warningVal = warningInput ? parseInt(warningInput.value, 10) : NaN;
+      const interval = intervalInput.value ? parseInt(intervalInput.value, 10) : undefined;
+      const warningVal = warningInput.value ? parseInt(warningInput.value, 10) : undefined;
       const lastService = parseInt(lastServiceInput.value, 10);
+      const lastServiceDate = lastServiceDateInput.value;
+      
+      const intervalTimeVal = intervalTimeValInput.value ? parseInt(intervalTimeValInput.value, 10) : undefined;
+      const intervalTimeUnit = intervalTimeUnitSelect.value;
+      const warningTimeVal = warningTimeValInput.value ? parseInt(warningTimeValInput.value, 10) : undefined;
+      const warningTimeUnit = warningTimeUnitSelect.value;
 
-      if (!name || isNaN(interval) || isNaN(lastService)) {
-        showToast('Please fill out all fields with valid data.', 'error');
+      if (!name || isNaN(lastService) || !lastServiceDate) {
+        showToast('Please fill out all required fields with valid data.', 'error');
+        return;
+      }
+
+      if ((interval === undefined || isNaN(interval)) && (intervalTimeVal === undefined || isNaN(intervalTimeVal))) {
+        showToast('Please specify either an Odometer interval (KM) or a Time interval.', 'error');
         return;
       }
 
@@ -119,8 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
         id: generateId('srv'),
         name: name,
         interval_km: interval,
+        warning_threshold: warningVal,
+        interval_time_val: intervalTimeVal,
+        interval_time_unit: intervalTimeUnit,
+        warning_time_val: warningTimeVal,
+        warning_time_unit: warningTimeUnit,
         last_service_odometer: lastService,
-        warning_threshold: !isNaN(warningVal) ? warningVal : undefined
+        last_service_date: lastServiceDate
       };
 
       const activeVeh = getActiveVehicle(state);
@@ -128,8 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
       saveAppState(state);
       renderAll(state);
       
-      // Reset form
+      // Reset form and re-fill default date
       formAddService.reset();
+      if (lastServiceDateInput) {
+        lastServiceDateInput.value = new Date().toISOString().split('T')[0];
+      }
       showToast(`Registered component: ${name}`, 'success');
     });
   }
@@ -144,13 +173,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const id = document.getElementById('edit-id').value;
       const name = document.getElementById('edit-name').value.trim();
-      const interval = parseInt(document.getElementById('edit-interval').value, 10);
-      const warningInput = document.getElementById('edit-warning-threshold');
-      const warningVal = warningInput ? parseInt(warningInput.value, 10) : NaN;
+      const interval = document.getElementById('edit-interval').value ? parseInt(document.getElementById('edit-interval').value, 10) : undefined;
+      const warningVal = document.getElementById('edit-warning-threshold').value ? parseInt(document.getElementById('edit-warning-threshold').value, 10) : undefined;
+      
+      const intervalTimeVal = document.getElementById('edit-interval-time-val').value ? parseInt(document.getElementById('edit-interval-time-val').value, 10) : undefined;
+      const intervalTimeUnit = document.getElementById('edit-interval-time-unit').value;
+      const warningTimeVal = document.getElementById('edit-warning-time-val').value ? parseInt(document.getElementById('edit-warning-time-val').value, 10) : undefined;
+      const warningTimeUnit = document.getElementById('edit-warning-time-unit').value;
+      
       const lastService = parseInt(document.getElementById('edit-last-service').value, 10);
+      const lastServiceDate = document.getElementById('edit-last-service-date').value;
 
-      if (!id || !name || isNaN(interval) || isNaN(lastService)) {
+      // One-time overrides
+      const oneTimeLimitKm = document.getElementById('edit-one-time-limit-km').value ? parseInt(document.getElementById('edit-one-time-limit-km').value, 10) : null;
+      const oneTimeLimitDate = document.getElementById('edit-one-time-limit-date').value || null;
+
+      if (!id || !name || isNaN(lastService) || !lastServiceDate) {
         showToast('Please enter valid updates.', 'error');
+        return;
+      }
+
+      if ((interval === undefined || isNaN(interval)) && (intervalTimeVal === undefined || isNaN(intervalTimeVal))) {
+        showToast('Please specify either an Odometer interval (KM) or a Time interval.', 'error');
         return;
       }
 
@@ -159,8 +203,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (service) {
         service.name = name;
         service.interval_km = interval;
+        service.warning_threshold = warningVal;
+        service.interval_time_val = intervalTimeVal;
+        service.interval_time_unit = intervalTimeUnit;
+        service.warning_time_val = warningTimeVal;
+        service.warning_time_unit = warningTimeUnit;
         service.last_service_odometer = lastService;
-        service.warning_threshold = !isNaN(warningVal) ? warningVal : undefined;
+        service.last_service_date = lastServiceDate;
+        
+        // One-time overrides
+        service.one_time_limit_km = oneTimeLimitKm;
+        service.one_time_limit_date = oneTimeLimitDate;
         
         saveAppState(state);
         renderAll(state);

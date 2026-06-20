@@ -365,6 +365,35 @@ body {
   background-color: #2563eb;
 }
 
+.form-group-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-group-row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1fr;
+  gap: 8px;
+  align-items: end;
+}
+.form-divider {
+  border-top: 1px solid var(--border-light);
+  margin: 20px 0;
+}
+.override-section h4 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--status-warning);
+  letter-spacing: 0.02em;
+}
+.override-section .section-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+
 /* ==========================================================================
    4. ODOMETER HUD COMPONENT
    ========================================================================== */
@@ -1723,6 +1752,11 @@ body {
 @media (max-width: 500px) {
   .settings-row-grid {
     grid-template-columns: 1fr;
+  }
+  .form-group-row-2,
+  .form-group-row-3 {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 }
 .reminder-time-row label {

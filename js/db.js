@@ -347,6 +347,11 @@ function markServiceDone(serviceId, cost, notes) {
   const service = vehicle.services.find(s => s.id === serviceId);
   if (service) {
     service.last_service_odometer = vehicle.meta.current_odometer;
+    service.last_service_date = new Date().toISOString().split('T')[0];
+    
+    // Clear one-time overrides
+    service.one_time_limit_km = null;
+    service.one_time_limit_date = null;
     
     if (!vehicle.service_history) {
       vehicle.service_history = [];

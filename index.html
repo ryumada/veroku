@@ -240,6 +240,27 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <div id="components-cards-container" class="components-cards-view" hidden>
               <!-- Dynamically populated component cards -->
             </div>
+
+            <!-- Pagination for Registered Components -->
+            <div class="components-pagination-bar" id="components-pagination">
+              <div class="per-page-control">
+                <label for="select-components-per-page">Show:</label>
+                <select id="select-components-per-page" class="sort-dropdown">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="1000">1000</option>
+                </select>
+              </div>
+              <div class="pagination-nav">
+                <button type="button" id="btn-components-prev" class="nav-btn-arrow">◀</button>
+                <span id="components-page-display" class="page-label">Page 1 of 1</span>
+                <button type="button" id="btn-components-next" class="nav-btn-arrow">▶</button>
+              </div>
+            </div>
           </div>
 
           <!-- Cost Summary Card -->

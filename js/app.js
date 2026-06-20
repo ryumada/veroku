@@ -17,9 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
   window.historyActiveDate = new Date();
   window.odoHistoryPage = 0;
 
-  // Initialize sorting preferences from localStorage
+  // Initialize sorting and pagination preferences from localStorage
   window.dashboardSortMode = localStorage.getItem('v_dashboard_sort_mode') || 'priority';
   window.componentsSortMode = localStorage.getItem('v_components_sort_mode') || 'default';
+  window.componentsPage = 1;
+  window.componentsPerPage = parseInt(localStorage.getItem('v_components_per_page'), 10) || 10;
 
   // Sync sort select element dropdown values
   const dashboardSortSelect = document.getElementById('select-dashboard-sort');
@@ -29,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const componentsSortSelect = document.getElementById('select-components-sort');
   if (componentsSortSelect) {
     componentsSortSelect.value = window.componentsSortMode;
+  }
+  const componentsPerPageSelect = document.getElementById('select-components-per-page');
+  if (componentsPerPageSelect) {
+    componentsPerPageSelect.value = window.componentsPerPage;
   }
 
   // 2. Perform First Paint
@@ -90,6 +96,26 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('select-components-sort')?.addEventListener('change', (e) => {
     window.componentsSortMode = e.target.value;
     localStorage.setItem('v_components_sort_mode', e.target.value);
+    window.componentsPage = 1;
+    renderAll(state);
+  });
+
+  document.getElementById('select-components-per-page')?.addEventListener('change', (e) => {
+    window.componentsPerPage = parseInt(e.target.value, 10);
+    localStorage.setItem('v_components_per_page', e.target.value);
+    window.componentsPage = 1;
+    renderAll(state);
+  });
+
+  document.getElementById('btn-components-prev')?.addEventListener('click', () => {
+    if (window.componentsPage > 1) {
+      window.componentsPage--;
+      renderAll(state);
+    }
+  });
+
+  document.getElementById('btn-components-next')?.addEventListener('click', () => {
+    window.componentsPage++;
     renderAll(state);
   });
 
@@ -181,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeVeh = getActiveVehicle(state);
       activeVeh.services.push(newService);
       saveAppState(state);
+      window.componentsPage = 1;
       renderAll(state);
       
       // Reset form and re-fill default date
@@ -281,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm(`Are you sure you want to delete tracking for: ${serviceName}?`)) {
           activeVeh.services.splice(serviceIndex, 1);
           saveAppState(state);
+          window.componentsPage = 1;
           renderAll(state);
           showToast('Component removed.', 'success');
         }
@@ -843,6 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedId && state.vehicles[selectedId]) {
         state.active_vehicle_id = selectedId;
         saveAppState(state);
+        window.componentsPage = 1;
         renderAll(state);
         showToast(`Switched active profile`, 'success');
       }

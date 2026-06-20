@@ -282,10 +282,27 @@ function renderServiceTable(state) {
   const enriched = computeAllServices(services, currentOdo);
   const sortedEnriched = sortServices(enriched, window.componentsSortMode || 'default');
 
+  // Pagination setup
+  window.componentsPage = window.componentsPage || 1;
+  window.componentsPerPage = parseInt(window.componentsPerPage, 10) || 10;
+  const totalComponents = sortedEnriched.length;
+  const totalPages = Math.ceil(totalComponents / window.componentsPerPage) || 1;
+  
+  if (window.componentsPage > totalPages) {
+    window.componentsPage = totalPages;
+  }
+  if (window.componentsPage < 1) {
+    window.componentsPage = 1;
+  }
+
+  const startIdx = (window.componentsPage - 1) * window.componentsPerPage;
+  const endIdx = startIdx + window.componentsPerPage;
+  const paginatedEnriched = sortedEnriched.slice(startIdx, endIdx);
+
   let tableHtml = '';
   let cardsHtml = '';
 
-  sortedEnriched.forEach(s => {
+  paginatedEnriched.forEach(s => {
     // Formatting Intervals
     let intervalText = '';
     if (s.interval_km && s.interval_time_val) {
@@ -386,6 +403,36 @@ function renderServiceTable(state) {
   cardsContainer.innerHTML = cardsHtml;
 
   updateComponentsViewVisibility();
+
+  // Render pagination bar
+  const paginationBar = document.getElementById('components-pagination');
+  if (paginationBar) {
+    if (totalComponents === 0) {
+      paginationBar.setAttribute('hidden', 'true');
+    } else {
+      paginationBar.removeAttribute('hidden');
+      
+      const pageDisplay = document.getElementById('components-page-display');
+      if (pageDisplay) {
+        pageDisplay.textContent = `Page ${window.componentsPage} of ${totalPages}`;
+      }
+      
+      const btnPrev = document.getElementById('btn-components-prev');
+      if (btnPrev) {
+        btnPrev.disabled = window.componentsPage === 1;
+      }
+      
+      const btnNext = document.getElementById('btn-components-next');
+      if (btnNext) {
+        btnNext.disabled = window.componentsPage === totalPages;
+      }
+      
+      const perPageSelect = document.getElementById('select-components-per-page');
+      if (perPageSelect) {
+        perPageSelect.value = window.componentsPerPage;
+      }
+    }
+  }
 }
 
 /**

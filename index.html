@@ -144,8 +144,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Services Data Table -->
           <div class="card table-card">
-            <h3>Registered Components</h3>
-            <div class="table-responsive">
+            <div class="components-header">
+              <h3>Registered Components</h3>
+              <div class="view-toggle" id="components-view-toggle">
+                <button type="button" id="btn-components-table-view" class="view-toggle-btn active" title="Table View">📋 Table</button>
+                <button type="button" id="btn-components-card-view" class="view-toggle-btn" title="Card View">🗂️ Cards</button>
+              </div>
+            </div>
+            
+            <div id="components-table-container" class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
@@ -164,6 +171,11 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Card View container (hidden by default on desktop) -->
+            <div id="components-cards-container" class="components-cards-view" hidden>
+              <!-- Dynamically populated component cards -->
             </div>
           </div>
 

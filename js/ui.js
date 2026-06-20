@@ -199,28 +199,64 @@ function renderServiceCards(enrichedServices, activeVeh) {
 }
 
 /**
- * Render service configuration table rows.
+ * Update components view mode visibility based on active view mode.
+ */
+function updateComponentsViewVisibility() {
+  const mode = window.componentsViewMode || 'table';
+  const btnTable = document.getElementById('btn-components-table-view');
+  const btnCards = document.getElementById('btn-components-card-view');
+  const tableContainer = document.getElementById('components-table-container');
+  const cardsContainer = document.getElementById('components-cards-container');
+
+  if (btnTable && btnCards && tableContainer && cardsContainer) {
+    if (mode === 'table') {
+      btnTable.classList.add('active');
+      btnCards.classList.remove('active');
+      tableContainer.removeAttribute('hidden');
+      cardsContainer.setAttribute('hidden', 'true');
+    } else {
+      btnTable.classList.remove('active');
+      btnCards.classList.add('active');
+      tableContainer.setAttribute('hidden', 'true');
+      cardsContainer.removeAttribute('hidden');
+    }
+  }
+}
+
+/**
+ * Render service configuration table rows and cards.
  * @param {object} state
  */
 function renderServiceTable(state) {
-  const container = document.getElementById('service-table');
-  if (!container) return;
+  const tableBody = document.getElementById('service-table');
+  const cardsContainer = document.getElementById('components-cards-container');
+  if (!tableBody || !cardsContainer) return;
 
   const services = state.services || [];
   if (services.length === 0) {
-    container.innerHTML = `
+    tableBody.innerHTML = `
       <tr>
         <td colspan="6" class="table-empty">No components registered yet. Start adding items above.</td>
       </tr>
     `;
+    cardsContainer.innerHTML = `
+      <div class="table-empty" style="text-align: center; padding: 40px; color: var(--text-secondary); width: 100%; grid-column: 1 / -1;">
+        No components registered yet. Start adding items above.
+      </div>
+    `;
+    updateComponentsViewVisibility();
     return;
   }
 
-  let html = '';
+  let tableHtml = '';
+  let cardsHtml = '';
+
   services.forEach(s => {
     const nextKm = s.last_service_odometer + s.interval_km;
     const warnKmText = s.warning_threshold ? `${s.warning_threshold} KM` : 'Default';
-    html += `
+    
+    // Table Row HTML
+    tableHtml += `
       <tr>
         <td><strong>${s.name}</strong></td>
         <td class="cell-display">${s.interval_km} KM</td>
@@ -235,9 +271,43 @@ function renderServiceTable(state) {
         </td>
       </tr>
     `;
+
+    // Card HTML
+    cardsHtml += `
+      <div class="component-card">
+        <div class="component-card-header">
+          <strong class="component-card-name">${s.name}</strong>
+          <div class="component-card-actions">
+            <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>
+            <button class="tbl-btn btn-delete" data-id="${s.id}">Delete</button>
+          </div>
+        </div>
+        <div class="component-card-body">
+          <div class="component-card-row">
+            <span class="lbl">Interval</span>
+            <span class="val">${s.interval_km} KM</span>
+          </div>
+          <div class="component-card-row">
+            <span class="lbl">Warning At</span>
+            <span class="val">${warnKmText}</span>
+          </div>
+          <div class="component-card-row">
+            <span class="lbl">Last Service</span>
+            <span class="val">${s.last_service_odometer} KM</span>
+          </div>
+          <div class="component-card-row">
+            <span class="lbl">Next Due</span>
+            <span class="val">${nextKm} KM</span>
+          </div>
+        </div>
+      </div>
+    `;
   });
 
-  container.innerHTML = html;
+  tableBody.innerHTML = tableHtml;
+  cardsContainer.innerHTML = cardsHtml;
+
+  updateComponentsViewVisibility();
 }
 
 /**
@@ -955,3 +1025,4 @@ window.populateOdometerHistoryModal = populateOdometerHistoryModal;
 window.renderVehicleSelector = renderVehicleSelector;
 window.renderCostSummary = renderCostSummary;
 window.renderServiceHistory = renderServiceHistory;
+window.updateComponentsViewVisibility = updateComponentsViewVisibility;

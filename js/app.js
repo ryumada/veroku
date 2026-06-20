@@ -44,6 +44,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================================================
+  // COMPONENTS VIEW TOGGLE WIRING
+  // ==========================================================================
+  window.componentsViewMode = localStorage.getItem('v_components_view_mode') || 'table';
+
+  document.getElementById('btn-components-table-view')?.addEventListener('click', () => {
+    window.componentsViewMode = 'table';
+    localStorage.setItem('v_components_view_mode', 'table');
+    window.updateComponentsViewVisibility();
+  });
+
+  document.getElementById('btn-components-card-view')?.addEventListener('click', () => {
+    window.componentsViewMode = 'cards';
+    localStorage.setItem('v_components_view_mode', 'cards');
+    window.updateComponentsViewVisibility();
+  });
+
+  // ==========================================================================
   // ODOMETER HUD SUBMIT HANDLER
   // ==========================================================================
   document.body.addEventListener('submit', (e) => {
@@ -156,37 +173,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // EVENT DELEGATION: TABLE ACTIONS (EDIT/DELETE)
+  // EVENT DELEGATION: COMPONENT ACTIONS (EDIT/DELETE)
   // ==========================================================================
   const serviceTable = document.getElementById('service-table');
+  const serviceCardsContainer = document.getElementById('components-cards-container');
+
+  function handleServiceAction(e) {
+    const editBtn = e.target.closest('.btn-edit');
+    const deleteBtn = e.target.closest('.btn-delete');
+
+    const activeVeh = getActiveVehicle(state);
+    if (editBtn) {
+      const id = editBtn.getAttribute('data-id');
+      const service = activeVeh.services.find(s => s.id === id);
+      if (service) {
+        showModal(service);
+      }
+    }
+
+    if (deleteBtn) {
+      const id = deleteBtn.getAttribute('data-id');
+      const serviceIndex = activeVeh.services.findIndex(s => s.id === id);
+      if (serviceIndex !== -1) {
+        const serviceName = activeVeh.services[serviceIndex].name;
+        if (confirm(`Are you sure you want to delete tracking for: ${serviceName}?`)) {
+          activeVeh.services.splice(serviceIndex, 1);
+          saveAppState(state);
+          renderAll(state);
+          showToast('Component removed.', 'success');
+        }
+      }
+    }
+  }
+
   if (serviceTable) {
-    serviceTable.addEventListener('click', (e) => {
-      const editBtn = e.target.closest('.btn-edit');
-      const deleteBtn = e.target.closest('.btn-delete');
-
-      const activeVeh = getActiveVehicle(state);
-      if (editBtn) {
-        const id = editBtn.getAttribute('data-id');
-        const service = activeVeh.services.find(s => s.id === id);
-        if (service) {
-          showModal(service);
-        }
-      }
-
-      if (deleteBtn) {
-        const id = deleteBtn.getAttribute('data-id');
-        const serviceIndex = activeVeh.services.findIndex(s => s.id === id);
-        if (serviceIndex !== -1) {
-          const serviceName = activeVeh.services[serviceIndex].name;
-          if (confirm(`Are you sure you want to delete tracking for: ${serviceName}?`)) {
-            activeVeh.services.splice(serviceIndex, 1);
-            saveAppState(state);
-            renderAll(state);
-            showToast('Component removed.', 'success');
-          }
-        }
-      }
-    });
+    serviceTable.addEventListener('click', handleServiceAction);
+  }
+  if (serviceCardsContainer) {
+    serviceCardsContainer.addEventListener('click', handleServiceAction);
   }
 
   // ==========================================================================

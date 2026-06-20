@@ -1266,6 +1266,123 @@ body {
   border-left-color: var(--status-critical);
 }
 
+/* Components Card View & View Switcher */
+.components-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 16px;
+}
+.view-toggle {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  align-self: center;
+}
+:root[data-theme="light"] .view-toggle {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.view-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.view-toggle-btn.active {
+  background-color: var(--border-focus);
+  color: white;
+}
+.view-toggle-btn:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+:root[data-theme="light"] .view-toggle-btn:hover:not(.active) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.components-cards-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+.component-card {
+  background-color: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: var(--transition-normal);
+}
+.component-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(255, 255, 255, 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+:root[data-theme="light"] .component-card {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+:root[data-theme="light"] .component-card:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.component-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 8px;
+  gap: 12px;
+}
+.component-card-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+  word-break: break-word;
+}
+.component-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.component-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.component-card-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.component-card-row .lbl {
+  color: var(--text-secondary);
+}
+.component-card-row .val {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+}
+
 /* ==========================================================================
    10. RESPONSIVE MEDIA QUERIES
    ========================================================================== */
@@ -1473,6 +1590,17 @@ body {
   }
   .app-main {
     padding-bottom: 80px;
+  }
+
+  /* Registered components mobile view lock */
+  #components-view-toggle {
+    display: none !important;
+  }
+  #components-table-container {
+    display: none !important;
+  }
+  #components-cards-container {
+    display: grid !important; /* Forces layout show */
   }
 }
 

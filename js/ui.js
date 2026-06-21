@@ -216,6 +216,11 @@ function renderServiceCards(enrichedServices, activeVeh) {
         </div>
 
         <div class="tracker-actions">
+          ${s.notes ? `
+            <button type="button" class="tracker-notes-btn" data-service-id="${s.id}">
+              <span>📝</span> Notes
+            </button>
+          ` : ''}
           <button class="tracker-done-btn" data-service-id="${s.id}">
             <span>✓</span> Mark as Done
           </button>
@@ -353,7 +358,10 @@ function renderServiceTable(state) {
     // Table Row HTML
     tableHtml += `
       <tr>
-        <td><strong>${s.name}</strong></td>
+        <td>
+          <strong>${s.name}</strong>
+          ${s.notes ? `<div class="component-notes">${parseMarkdown(s.notes)}</div>` : ''}
+        </td>
         <td class="cell-display">${intervalText}</td>
         <td class="cell-display">${warningText}</td>
         <td class="cell-display">${lastServiceText}</td>
@@ -371,7 +379,10 @@ function renderServiceTable(state) {
     cardsHtml += `
       <div class="component-card">
         <div class="component-card-header">
-          <strong class="component-card-name">${s.name}</strong>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <strong class="component-card-name">${s.name}</strong>
+            ${s.notes ? `<div class="component-notes">${parseMarkdown(s.notes)}</div>` : ''}
+          </div>
           <div class="component-card-actions">
             <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>
             <button class="tbl-btn btn-delete" data-id="${s.id}">Delete</button>
@@ -830,6 +841,10 @@ function showModal(service) {
   // One-time overrides
   document.getElementById('edit-one-time-limit-km').value = service.one_time_limit_km || '';
   document.getElementById('edit-one-time-limit-date').value = service.one_time_limit_date || '';
+
+  // Notes
+  const editNotesEl = document.getElementById('edit-notes');
+  if (editNotesEl) editNotesEl.value = service.notes || '';
 
   modal.removeAttribute('hidden');
 }

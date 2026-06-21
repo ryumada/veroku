@@ -175,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const warningVal = warningInput.value ? parseInt(warningInput.value, 10) : undefined;
       const lastService = parseInt(lastServiceInput.value, 10);
       const lastServiceDate = lastServiceDateInput.value;
+      const notesInput = document.getElementById('add-notes');
+      const notes = notesInput ? notesInput.value.trim() : '';
 
       const intervalTimeVal = intervalTimeValInput.value ? parseInt(intervalTimeValInput.value, 10) : undefined;
       const intervalTimeUnit = intervalTimeUnitSelect.value;
@@ -201,7 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         warning_time_val: warningTimeVal,
         warning_time_unit: warningTimeUnit,
         last_service_odometer: lastService,
-        last_service_date: lastServiceDate
+        last_service_date: lastServiceDate,
+        notes: notes
       };
 
       const activeVeh = getActiveVehicle(state);
@@ -239,6 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lastService = parseInt(document.getElementById('edit-last-service').value, 10);
       const lastServiceDate = document.getElementById('edit-last-service-date').value;
+      const editNotesInput = document.getElementById('edit-notes');
+      const notes = editNotesInput ? editNotesInput.value.trim() : '';
 
       // One-time overrides
       const oneTimeLimitKm = document.getElementById('edit-one-time-limit-km').value ? parseInt(document.getElementById('edit-one-time-limit-km').value, 10) : null;
@@ -266,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         service.warning_time_unit = warningTimeUnit;
         service.last_service_odometer = lastService;
         service.last_service_date = lastServiceDate;
+        service.notes = notes;
 
         // One-time overrides
         service.one_time_limit_km = oneTimeLimitKm;
@@ -341,6 +347,21 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('log-service-cost').value = '';
           document.getElementById('log-service-notes').value = '';
           document.getElementById('modal-service-log').removeAttribute('hidden');
+        }
+        return;
+      }
+
+      const notesBtn = e.target.closest('.tracker-notes-btn');
+      if (notesBtn) {
+        const serviceId = notesBtn.getAttribute('data-service-id');
+        const activeVeh = getActiveVehicle(state);
+        const service = activeVeh.services.find(s => s.id === serviceId);
+        if (service && service.notes) {
+          const titleEl = document.getElementById('service-notes-title');
+          const bodyEl = document.getElementById('service-notes-body');
+          if (titleEl) titleEl.textContent = `${service.name} Notes`;
+          if (bodyEl) bodyEl.innerHTML = parseMarkdown(service.notes);
+          document.getElementById('modal-service-notes-view')?.removeAttribute('hidden');
         }
       }
     });
@@ -678,13 +699,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!activeVeh) return;
 
     activeVeh.services = [
-      { id: generateId('srv'), name: 'Rantai Roda - Periksa & Lumasi (PL)', interval_km: 500, last_service_odometer: 0, warning_threshold: 450 },
-      { id: generateId('srv'), name: 'Oli Mesin - Ganti (G)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Saluran Bahan Bakar - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Cara Kerja Gas Tangan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Pernapasan Bak Mesin - Bersihkan (B)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Busi - Periksa / Ganti (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Jarak Renggang Klep - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
+      { id: generateId('srv'), name: 'Rantai Roda - Periksa & Lumasi (PL)', interval_km: 500, last_service_odometer: 0, warning_threshold: 450, interval_time_val: '1', interval_time_unit: 'weeks', warning_time_val: '6', warning_time_unit: 'days' },
+      { id: generateId('srv'), name: 'Oli Mesin - Ganti (G)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Saluran Bahan Bakar - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Cara Kerja Gas Tangan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Pernapasan Bak Mesin - Bersihkan (B)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Busi - Periksa / Ganti (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Jarak Renggang Klep - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
       { id: generateId('srv'), name: 'Putaran Stasioner Mesin - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
       { id: generateId('srv'), name: 'Minyak Rem - Periksa & Ganti Berkala (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
       { id: generateId('srv'), name: 'Keausan Kampas Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
@@ -696,17 +717,17 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: generateId('srv'), name: 'Suspensi - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
       { id: generateId('srv'), name: 'Mur, Baut, Pengencang - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
       { id: generateId('srv'), name: 'Roda / Ban - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Saringan Udara - Ganti (G)', interval_km: 16000, last_service_odometer: 0, warning_threshold: 15000 },
-      { id: generateId('srv'), name: 'Saringan Kasa Oli Mesin - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000 },
-      { id: generateId('srv'), name: 'Saringan Sentrifugal Oli - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000 },
-      { id: generateId('srv'), name: 'Bantalan Kepala Kemudi - Periksa (P)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000 }
+      { id: generateId('srv'), name: 'Saringan Udara - Ganti (Ganti atau Bersihkan)', interval_km: 16000, last_service_odometer: 0, warning_threshold: 15000, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Saringan Kasa Oli Mesin - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Saringan Sentrifugal Oli - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Bantalan Kepala Kemudi - Periksa (P)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' }
     ];
 
     activeVeh.routine_checks.daily = [
       {
         id: generateId('chk'),
         task: 'Persediaan Bahan Bakar',
-        desc: `Cara cek: Periksa sisa bahan bakar melalui meter digital pada panel instrumen. Lakukan pengisian bensin jika volume sudah mendekati indikator berkedip (dua atau tiga balok terakhir).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 28 (Penjelasan Meter Bahan Bakar) & Hal. 37 (Pengisian Bahan Bakar).`,
+        desc: `Cara cek: Periksa sisa bahan bakar melalui meter digital pada panel instrumen. Lakukan pengisian bensin jika volume sudah mendekati indikator berkedip (dua atau tiga balok terakhir).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 20 (Penjelasan Meter Bahan Bakar) & Hal. 30 (Pengisian Bahan Bakar).`,
         checked: false
       },
       {
@@ -819,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeVeh.routine_checks.monthly = [
       {
         id: generateId('chk'),
-        task: 'Penyetelan Jarak Renggang Klep',
+        task: 'Penyetelan Jarak Renggang Klep (4000 km)',
         desc: `Periksa renggang klep dalam kondisi mesin dingin. Renggang yang salah menyebabkan kebisingan atau penurunan performa.\n\nSpesifikasi:\n* Klep Masuk (In): 0,10 ± 0,02 mm\n* Klep Buang (Ex): 0,15 ± 0,02 mm`,
         checked: false
       }
@@ -1128,6 +1149,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Routine Description modal close listeners
   document.getElementById('btn-close-routine-desc-view')?.addEventListener('click', closeModal);
   document.getElementById('btn-close-routine-desc-view-footer')?.addEventListener('click', closeModal);
+
+  // Service Notes modal close listeners
+  document.getElementById('btn-close-service-notes-view')?.addEventListener('click', closeModal);
+  document.getElementById('btn-close-service-notes-view-footer')?.addEventListener('click', closeModal);
 
   // ==========================================================================
   // SERVICE HISTORY DATE NAVIGATION ACTIONS

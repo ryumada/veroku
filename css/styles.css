@@ -310,6 +310,15 @@ body {
   display: inline-block;
   margin-left: 4px;
 }
+.form-group .form-helper {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
 .form-group input {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-light);
@@ -714,9 +723,14 @@ body {
 
 .tracker-actions {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
+  width: 100%;
 }
-.tracker-done-btn {
+.tracker-actions .tracker-notes-btn {
+  flex: 0 0 auto;
+}
+.tracker-actions .tracker-done-btn {
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-light);
   color: var(--text-main);
@@ -729,14 +743,35 @@ body {
   align-items: center;
   gap: 6px;
   transition: var(--transition-fast);
-  width: 100%;
   justify-content: center;
+  flex: 1 1 auto;
+  width: auto;
 }
 .tracker-done-btn:hover {
   background-color: var(--status-optimal);
   border-color: var(--status-optimal);
   color: white;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+.tracker-notes-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  justify-content: center;
+}
+.tracker-notes-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-secondary);
 }
 
 .tracker-empty {
@@ -1059,17 +1094,33 @@ body {
 .chk-desc.expanded {
   display: block;
 }
+.component-notes,
+.tracker-notes {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.5;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-left: 2px solid var(--border-focus);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  text-align: left;
+}
 .markdown-body {
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.6;
 }
 .chk-desc strong,
-.markdown-body strong {
+.markdown-body strong,
+.component-notes strong,
+.tracker-notes strong {
   color: var(--text-main);
 }
 .chk-desc code,
-.markdown-body code {
+.markdown-body code,
+.component-notes code,
+.tracker-notes code {
   background-color: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
@@ -1077,13 +1128,17 @@ body {
   font-size: 11px;
 }
 .chk-desc ul.markdown-list,
-.markdown-body ul.markdown-list {
+.markdown-body ul.markdown-list,
+.component-notes ul.markdown-list,
+.tracker-notes ul.markdown-list {
   margin: 6px 0 0 16px;
   padding: 0;
   list-style-type: disc;
 }
 .chk-desc ul.markdown-list li,
-.markdown-body ul.markdown-list li {
+.markdown-body ul.markdown-list li,
+.component-notes ul.markdown-list li,
+.tracker-notes ul.markdown-list li {
   margin-bottom: 4px;
 }
 .checklist-item.checked .chk-desc {
@@ -1647,8 +1702,18 @@ body {
   .tracker-actions {
     grid-area: actions;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
   }
-  .tracker-done-btn {
+  .tracker-actions .tracker-notes-btn {
+    flex: none;
+    width: 100%;
+  }
+  .tracker-actions .tracker-done-btn {
+    flex: none;
+    width: 100%;
     padding: 8px 12px;
     font-size: 12px;
     white-space: nowrap;

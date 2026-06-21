@@ -188,6 +188,12 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 </div>
               </div>
 
+              <div class="form-group">
+                <label for="add-notes">Notes / Instructions (Markdown supported)</label>
+                <span class="form-helper">Supports Markdown: <strong>**bold**</strong>, <em>*italics*</em>, <code>`code`</code>, and lists starting with <code>-</code> or <code>*</code>.</span>
+                <textarea id="add-notes" rows="3" placeholder="e.g., Use 10W-40. Replace copper washer."></textarea>
+              </div>
+
               <button type="submit" class="submit-btn">Register Component</button>
             </form>
           </div>
@@ -630,6 +636,12 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           </div>
         </div>
 
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="edit-notes">Notes / Instructions (Markdown supported)</label>
+          <span class="form-helper">Supports Markdown: <strong>**bold**</strong>, <em>*italics*</em>, <code>`code`</code>, and lists starting with <code>-</code> or <code>*</code>.</span>
+          <textarea id="edit-notes" rows="3" placeholder="e.g., Use 10W-40. Replace copper washer."></textarea>
+        </div>
+
         <div class="form-divider"></div>
         <div class="override-section">
           <h4>One-Time Next Due Overrides</h4>
@@ -939,6 +951,22 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
       </div>
       <div class="modal-actions">
         <button type="button" class="action-btn outline-btn" id="btn-close-routine-desc-view-footer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Notes View Modal -->
+  <div id="modal-service-notes-view" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="service-notes-title">Component Notes</h3>
+        <button type="button" class="modal-close" id="btn-close-service-notes-view">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="service-notes-body" class="markdown-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-close-service-notes-view-footer">Close</button>
       </div>
     </div>
   </div>

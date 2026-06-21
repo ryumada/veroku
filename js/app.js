@@ -901,22 +901,15 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         id: generateId('chk'),
         task: 'Kerusakan meter bahan bakar',
-        desc: `Cek buku panduan hal. 72 (77 PDF).`,
+        desc: `Cek buku panduan hal. 72 (77 PDF Indikasi Kerusakan Meter Bahan Bakar).`,
         checked: false
       },
       {
         id: generateId('chk'),
         task: 'Bohlam lampu mati',
-        desc: `Cek buku panduan hal. 75-78 (80-83 PDF).`,
+        desc: `Cek buku panduan hal. 75-78 (80-83 PDF Bohlam Lamput Mati).`,
         checked: false
       },
-      {
-        id: generateId('chk'),
-        task: 'Indikator oli mesin tidak menyala saat kunci kontak ON',
-        desc: `Cek buku panduan hal. 51 (56 PDF).`,
-        checked: false
-      },
-
     ];
 
     saveAppState(state);

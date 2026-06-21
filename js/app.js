@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.componentsSortMode = localStorage.getItem('v_components_sort_mode') || 'default';
   window.componentsPage = 1;
   window.componentsPerPage = parseInt(localStorage.getItem('v_components_per_page'), 10) || 10;
+  window.dashboardSearchQuery = '';
+  window.componentsSearchQuery = '';
 
   // Sync sort select element dropdown values
   const dashboardSortSelect = document.getElementById('select-dashboard-sort');
@@ -35,6 +37,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const componentsPerPageSelect = document.getElementById('select-components-per-page');
   if (componentsPerPageSelect) {
     componentsPerPageSelect.value = window.componentsPerPage;
+  }
+
+  const searchDashboardInput = document.getElementById('search-dashboard');
+  if (searchDashboardInput) {
+    searchDashboardInput.addEventListener('input', (e) => {
+      window.dashboardSearchQuery = e.target.value;
+      renderAll(state);
+    });
+  }
+
+  const searchComponentsInput = document.getElementById('search-components');
+  if (searchComponentsInput) {
+    searchComponentsInput.addEventListener('input', (e) => {
+      window.componentsSearchQuery = e.target.value;
+      window.componentsPage = 1; // reset pagination page on search query change
+      renderAll(state);
+    });
   }
 
   // 2. Perform First Paint
@@ -699,91 +718,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!activeVeh) return;
 
     activeVeh.services = [
-      { id: generateId('srv'), name: 'Rantai Roda - Periksa & Lumasi (PL)', interval_km: 500, last_service_odometer: 0, warning_threshold: 450, interval_time_val: '1', interval_time_unit: 'weeks', warning_time_val: '6', warning_time_unit: 'days' },
-      { id: generateId('srv'), name: 'Oli Mesin - Ganti (G)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Saluran Bahan Bakar - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Cara Kerja Gas Tangan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Pernapasan Bak Mesin - Bersihkan (B)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Busi - Periksa / Ganti (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Jarak Renggang Klep - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Putaran Stasioner Mesin - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Minyak Rem - Periksa & Ganti Berkala (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Keausan Kampas Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Sistem Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Sakelar Lampu Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Arah Sinar Lampu Depan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Sistem Kopling - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Standar Samping - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Suspensi - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Mur, Baut, Pengencang - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
-      { id: generateId('srv'), name: 'Roda / Ban - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
+      { id: generateId('srv'), name: 'Rantai Roda - Periksa & Lumasi (PL)', interval_km: 500, last_service_odometer: 0, warning_threshold: 450, interval_time_val: '1', interval_time_unit: 'weeks', warning_time_val: '6', warning_time_unit: 'days', notes: 'Bersihkan dengan WD-40 lalu lumasi dengan oli gardan 80W-90' },
+      {
+        id: generateId('srv'), name: 'Oli Mesin - Ganti (G)', interval_km: 3500, last_service_odometer: 0, warning_threshold: 3250, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months', notes: 'Gunakan oli mesin 10W-40 Enduro Racing 4T, Shell Advance X7. Spesifikasi oli:\n\n● Standar JASO T 903*1: MA\n\n● Standar SAE*2: 10W- 30\n\n● Klasifikasi API * 3: SJ atau lebih tinggi.'
+      },
+      { id: generateId('srv'), name: 'Saluran Bahan Bakar - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: 'Coba cek mandiri dulu di Youtube.' },
+      { id: generateId('srv'), name: 'Cara Kerja Gas Tangan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months', notes: 'Putar gas tangan dari posisi tertutup hingga terbuka penuh pada semua posisi setang kemudi (belok kanan/kiri penuh). Pastikan gas tangan dapat menutup kembali secara otomatis dengan lancar.\n\nSpesifikasi: Jarak bebas putaran gas tangan yang ideal adalah 2–6 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 66 (71 PDF - Cara Pemeriksaan Jarak Bebas Putaran Gas).' },
+      { id: generateId('srv'), name: 'Pernapasan Bak Mesin - Bersihkan (B)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months', notes: 'Servis lebih sering jika seringkali dikendarai dalam hujan atau pada kecepatan tinggi.' },
+      { id: generateId('srv'), name: 'Busi - Periksa / Ganti (PG)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: 'Gunakan busi NGK C6HSA (standar) atau Denso U20FS-U. Periksa di 4000 km pertama lalu 4000 selanjutnya ganti (disarankan).' },
+      { id: generateId('srv'), name: 'Jarak Renggang Klep - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '12', warning_time_unit: 'months', notes: 'Pakai feeler, lihat di youtube cara buka kop mesin dan setel klep. Periksa renggang klep dalam kondisi mesin dingin. Renggang yang salah menyebabkan kebisingan atau penurunan performa.\n\nSpesifikasi:\n* Klep Masuk (In): 0,10 ± 0,02 mm\n* Klep Buang (Ex): 0,15 ± 0,02 mm' },
+      { id: generateId('srv'), name: 'Putaran Stasioner Mesin - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Minyak Rem - Periksa', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500 },
+      {
+        id: generateId('srv'), name: 'Minyak Rem - Ganti Berkala', interval_km: 24000, last_service_odometer: 0, warning_threshold: 23500, interval_time_val: '2', interval_time_unit: 'years', warning_time_val: '23', warning_time_unit: 'months', notes: 'Ganti oli rem setiap 2 tahun sekali agar kinerja rem tetap optimal. Minyak Rem Honda DOT 3 atau DOT 4 atau yang setara.'
+      },
+      { id: generateId('srv'), name: 'Keausan Kampas Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '355', warning_time_unit: 'days' },
+      { id: generateId('srv'), name: 'Sistem Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: 'Coba cek mandiri dulu di Youtube.' },
+      { id: generateId('srv'), name: 'Sakelar Lampu Rem - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Arah Sinar Lampu Depan - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Sistem Kopling - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: `1. Tarik tuas kopling dan pastikan transisinya halus. Periksa jarak main bebas pada ujung handel sebelum kopling mulai merenggang.\n\n2. Spesifikasi: Jarak main bebas ujung handel kopling yang ideal adalah 10–20 mm.\n\n3. Referensi Buku Pedoman Pemilik (BPP): Hal. 63–65 (68-70 PDF - Pemeriksaan \u0026 Penyetelan Kopling).` },
+      { id: generateId('srv'), name: 'Standar Samping - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: 'Cek buku panduan hal. 61 (66 PDF Memeriksa Standar Samping)' },
+      { id: generateId('srv'), name: 'Suspensi - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Mur, Baut, Pengencang - Periksa (P)', interval_km: 8000, last_service_odometer: 0, warning_threshold: 7500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Roda / Ban - Periksa (P)', interval_km: 4000, last_service_odometer: 0, warning_threshold: 3500, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months', notes: `Cara cek: Periksa kondisi fisik tapak ban secara visual (apakah ada paku, sayatan, retak, atau keausan abnormal). Periksa juga tekanan angin ban dalam kondisi dingin.\n\nSpesifikasi: * Ban Depan: 25 psi\nBan Belakang: 29 psi (untuk berkendara sendiri) / 33 psi (untuk berboncengan)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 8 (Spesifikasi tekanan angin ban dan setelan rantaisa), 53–56 (Spesifikasi Ban, Tekanan Udara, \u0026 Batas Keausan TWI), 45-47 (50-52 PDF - Memeriksa/Mengganti Ban).` },
       { id: generateId('srv'), name: 'Saringan Udara - Ganti (Ganti atau Bersihkan)', interval_km: 16000, last_service_odometer: 0, warning_threshold: 15000, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Saringan Kasa Oli Mesin - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Saringan Sentrifugal Oli - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' },
-      { id: generateId('srv'), name: 'Bantalan Kepala Kemudi - Periksa (P)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11000, interval_time_val: '6', interval_time_unit: 'months', warning_time_val: '5', warning_time_unit: 'months' }
+      { id: generateId('srv'), name: 'Saringan Kasa Oli Mesin - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11250, interval_time_val: '12', interval_time_unit: 'months', warning_time_val: '11', warning_time_unit: 'months' },
+      { id: generateId('srv'), name: 'Saringan Sentrifugal Oli - Bersihkan (B)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11250 },
+      { id: generateId('srv'), name: 'Bantalan Kepala Kemudi - Periksa (P)', interval_km: 12000, last_service_odometer: 0, warning_threshold: 11250 }
     ];
 
     activeVeh.routine_checks.daily = [
-      {
-        id: generateId('chk'),
-        task: 'Persediaan Bahan Bakar',
-        desc: `Cara cek: Periksa sisa bahan bakar melalui meter digital pada panel instrumen. Lakukan pengisian bensin jika volume sudah mendekati indikator berkedip (dua atau tiga balok terakhir).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 20 (Penjelasan Meter Bahan Bakar) & Hal. 30 (Pengisian Bahan Bakar).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Tinggi Permukaan Oli Mesin',
-        desc: `Cara cek: Periksa level oli melalui tangkai pengukur (dipstick) dalam kondisi motor tegak. Pastikan posisinya berada di antara tanda batas teratas (upper) dan terbawah (lower), sekaligus amati jika ada tanda kebocoran cairan di sekitar mesin.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 53 – 54 (58 - 59 PDF) (Oli Mesin → Memeriksa Oli Mesin dan Menambahkan Oli Mesin).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Cara Kerja Gas Tangan',
-        desc: `Cara cek: Putar gas tangan dari posisi tertutup hingga terbuka penuh pada semua posisi setang kemudi (belok kanan/kiri penuh). Pastikan gas tangan dapat menutup kembali secara otomatis dengan lancar.\n\nSpesifikasi: Jarak bebas putaran gas tangan yang ideal adalah 2–6 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 66 (71 PDF) (Cara Pemeriksaan Jarak Bebas Putaran Gas).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Rem Depan (minyak rem, jarak bebas, kampas rem)',
-        desc: `Cara cek: 1. Pastikan reservoir minyak rem berada dalam posisi horizontal dan ketinggian cairan berada di atas tanda batas LWR (Lower).\n2. Periksa ketebalan kampas rem melalui indikator keausan di kaliper cakram.\n3. Tarik tuas rem depan untuk merasakan "jarak bebas" fungsinya. Karena merupakan rem cakram hidrolik, tuas harus terasa kokoh/padat saat ditekan dan tidak terasa terlalu empuk atau "ngempos" (tidak ada angin palsu dalam sistem).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 55 – 56 (60 - 61 PDF) (Pemeriksaan Minyak Rem & Kampas Rem Cakram).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Rem Belakang (Panah dan Jarak Bebas)',
-        desc: `Cara cek: Tekan pedal rem belakang dan periksa jarak mainnya sebelum rem mulai menggigit. Amati juga panah indikator keausan kampas rem tromol pada panel roda belakang saat pedal ditekan penuh (pastikan panah tidak melewati batas tanda aus).\n\nSpesifikasi: Jarak main bebas ujung pedal rem belakang adalah 20–30 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 57 – 60 (62 - 65 PDF) (Penyetelan Jarak Bebas Pedal & Keausan Rem Tromol Belakang).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Jarak Bebas Kopling',
-        desc: `Cara cek: Tarik tuas kopling dan pastikan transisinya halus. Periksa jarak main bebas pada ujung handel sebelum kopling mulai merenggang.\n\nSpesifikasi: Jarak main bebas ujung handel kopling yang ideal adalah 10–20 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 63 – 65 (68 - 70 PDF) (Pemeriksaan & Penyetelan Kopling).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Kelonggaran Rantai & Mata Gir',
-        desc: `Cara cek: Lakukan pemeriksaan visual secara cepat pada rantai roda. Pastikan kelonggarannya normal (tidak terlalu kendur hingga menyentuh swingarm atau terlalu tegang) serta mata gir tidak tajam/aus.\n\nSpesifikasi: Jarak main bebas rantai (naik-turun) di bagian tengah adalah 20–30 mm (jangan berkendara jika kekenduran melebihi 50 mm).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 79 – 81 (Pemeriksaan Kelonggaran, Penyetelan, & Pelumasan Rantai Roda).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Lampu-lampu dan Klakson',
-        desc: `Cara cek: Nyalakan kunci kontak ke posisi ON, lalu uji fungsi:\n\nLampu depan (dekat dan jauh)\nLampu sein (kanan, kiri, depan, belakang)\nLampu rem (menyala lebih terang saat tuas/pedal rem ditekan)\nIndikator panel instrumen (lampu netral, MIL, lampu jauh)\nSuara klakson (harus terdengar nyaring dan normal)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 43 (Daftar Pemeriksaan Sebelum Berkendara).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Roda dan Ban',
-        desc: `Cara cek: Periksa kondisi fisik tapak ban secara visual (apakah ada paku, sayatan, retak, atau keausan abnormal). Periksa juga tekanan angin ban dalam kondisi dingin.\n\nSpesifikasi: * Ban Depan: 25 psi\nBan Belakang: 29 psi (untuk berkendara sendiri) / 33 psi (untuk berboncengan)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 8 (Spesifikasi tekanan angin ban dan setelan rantaisa) 53 – 56 (Spesifikasi Ban, Tekanan Udara, & Batas Keausan TWI).`,
-        checked: false
-      },
-      {
-        id: generateId('chk'),
-        task: 'Cek kunci ganda cakram',
-        desc: `Pastikan kunci ganda cakram dapat berfungsi dengan baik dan lepas dari cakram jika ingin berkendara. Bawa selalu kunci ganda cakram.`,
-        checked: false
-      },
       {
         id: generateId('chk'),
         task: 'Sarung tangan',
@@ -813,37 +777,146 @@ document.addEventListener('DOMContentLoaded', () => {
         task: 'Jas hujan',
         desc: `Bila musim hujan selalu bawa jas hujan dan berencana bepergian jarak jauh.`,
         checked: false
-      }
+      },
+      {
+        id: generateId('chk'),
+        task: 'Roda dan Ban',
+        desc: `Cara cek: Periksa kondisi fisik tapak ban secara visual (apakah ada paku, sayatan, retak, atau keausan abnormal). Periksa juga tekanan angin ban dalam kondisi dingin.\n\nSpesifikasi: * Ban Depan: 25 psi\nBan Belakang: 29 psi (untuk berkendara sendiri) / 33 psi (untuk berboncengan)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 8 (Spesifikasi tekanan angin ban dan setelan rantaisa) 53–56 (Spesifikasi Ban, Tekanan Udara, & Batas Keausan TWI), 45-47 (50-52 PDF - Memeriksa/Mengganti Ban).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cek kunci ganda cakram',
+        desc: `Pastikan kunci ganda cakram dapat berfungsi dengan baik dan lepas dari cakram jika ingin berkendara. Bawa selalu kunci ganda cakram.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Baut plat nomor',
+        desc: `Pastikan plat nomor terpasang dengan kencang dan tidak longgar. Goyang sedikit plat nomor untuk mengecek apakah kencang. Tidak boleh ada jarak atau celah antara plat nomor dan tempat pemasangannya, pastikan posisi plat nomor menempel erat di tempat pemasangannya. Tidak boleh ada celah, getaran, atau goyangan pada plat nomor saat dikendarai.\n\nUntuk plat nomor jenis lama (yang memiliki lubang di keempat sisinya), pastikan menggunakan baut yang sesuai (biasanya baut 10) untuk mengencangkan plat nomor ke braket plat nomor. Selain memastikan tidak ada celah atau goyangan, baut yang longgar pada plat nomor dapat berpotensi tersangkut pada pakaian orang lain dan menimbulkan kecelakaan.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Tinggi Permukaan Oli Mesin',
+        desc: `Cara cek: Periksa level oli melalui tangkai pengukur (dipstick) dalam kondisi motor tegak. Pastikan posisinya berada di antara tanda batas teratas (upper) dan terbawah (lower), sekaligus amati jika ada tanda kebocoran cairan di sekitar mesin.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 53 – 54 (58 - 59 PDF Oli Mesin → Memeriksa Oli Mesin dan Menambahkan Oli Mesin).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Rem Belakang (Panah dan Jarak Bebas)',
+        desc: `Cara cek: Tekan pedal rem belakang dan periksa jarak mainnya sebelum rem mulai menggigit. Amati juga panah indikator keausan kampas rem tromol pada panel roda belakang saat pedal ditekan penuh (pastikan panah tidak melewati batas tanda aus).\n\nSpesifikasi: Jarak main bebas ujung pedal rem belakang adalah 20–30 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 57–60 (62-65 PDF - Penyetelan Jarak Bebas Pedal & Keausan Rem Tromol Belakang).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Rem Depan (minyak rem, jarak bebas, kampas rem)',
+        desc: `Cara cek: 1. Pastikan reservoir minyak rem berada dalam posisi horizontal dan ketinggian cairan berada di atas tanda batas LWR (Lower).\n2. Periksa ketebalan kampas rem melalui indikator keausan di kaliper cakram.\n3. Tarik tuas rem depan untuk merasakan "jarak bebas" fungsinya. Karena merupakan rem cakram hidrolik, tuas harus terasa kokoh/padat saat ditekan dan tidak terasa terlalu empuk atau "ngempos" (tidak ada angin palsu dalam sistem).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 55–56 (60-61 PDF - Pemeriksaan Minyak Rem & Kampas Rem Cakram).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cara Kerja Gas Tangan',
+        desc: `Cara cek: Putar gas tangan dari posisi tertutup hingga terbuka penuh pada semua posisi setang kemudi (belok kanan/kiri penuh). Pastikan gas tangan dapat menutup kembali secara otomatis dengan lancar.\n\nSpesifikasi: Jarak bebas putaran gas tangan yang ideal adalah 2–6 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 66 (71 PDF - Cara Pemeriksaan Jarak Bebas Putaran Gas).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Jarak Bebas Kopling',
+        desc: `Cara cek: Tarik tuas kopling dan pastikan transisinya halus. Periksa jarak main bebas pada ujung handel sebelum kopling mulai merenggang.\n\nSpesifikasi: Jarak main bebas ujung handel kopling yang ideal adalah 10–20 mm.\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 63–65 (68-70 PDF - Pemeriksaan & Penyetelan Kopling).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Kelonggaran Rantai & Mata Gir',
+        desc: `Cara cek: Lakukan pemeriksaan visual secara cepat pada rantai roda. Pastikan kelonggarannya normal (tidak terlalu kendur hingga menyentuh swingarm atau terlalu tegang) serta mata gir tidak tajam/aus.\n\nSpesifikasi: Jarak main bebas rantai (naik-turun) di bagian tengah adalah 20–30 mm (jangan berkendara jika kekenduran melebihi 50 mm).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 62 (67 PDF Kelonggaran rantai), 43-44 (48-49 PDF Keausan gir, Membersihkan dan Melumasi Rantai)`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Persediaan Bahan Bakar',
+        desc: `Cara cek: Periksa sisa bahan bakar melalui meter digital pada panel instrumen. Lakukan pengisian bensin jika volume sudah mendekati indikator berkedip (dua atau tiga balok terakhir).\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 20 (Penjelasan Meter Bahan Bakar) & Hal. 30 (Pengisian Bahan Bakar).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Lampu-lampu dan Klakson',
+        desc: `Cara cek: Nyalakan kunci kontak ke posisi ON, lalu uji fungsi:\n\nLampu depan (dekat dan jauh)\nLampu sein (kanan, kiri, depan, belakang)\nLampu rem (menyala lebih terang saat tuas/pedal rem ditekan)\nIndikator panel instrumen (lampu netral, MIL, lampu jauh)\nSuara klakson (harus terdengar nyaring dan normal)\n\nReferensi Buku Pedoman Pemilik (BPP): Hal. 43 (Daftar Pemeriksaan Sebelum Berkendara).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cek Spion',
+        desc: `Cara cek: Pastikan posisi spion berada pada ketinggian yang sesuai sehingga Anda dapat melihat kendaraan di belakang Anda dengan jelas dari posisi berkendara normal.\n\nPastikan spion terpasang dengan kencang dan tidak goyang. Goyang sedikit spion untuk mengecek apakah kencang. Tidak boleh ada jarak atau celah antara spion dan tempat pemasangannya, pastikan posisi spion menempel erat di tempat pemasangannya. Tidak boleh ada celah, getaran, atau goyangan pada spion saat dikendarai.`,
+        checked: false
+      },
     ];
 
     activeVeh.routine_checks.weekly = [
       {
         id: generateId('chk'),
         task: 'Perawatan Rantai Roda (Setiap 500 km)',
-        desc: `Gerakkan rantai ke atas-bawah untuk memeriksa kekendurannya (standar jarak main bebas 20–30 mm; jangan berkendara jika kendur melebihi 50 mm). Bersihkan rantai menggunakan kain kering/sikat halus dengan larutan titik nyala tinggi, lalu lumasi memakai pelumas khusus rantai atau oli transmisi SAE 80/90.`,
+        desc: `Gerakkan rantai ke atas-bawah untuk memeriksa kekendurannya (standar jarak main bebas 20–30 mm; jangan berkendara jika kendur melebihi 50 mm). Bersihkan rantai menggunakan kain kering/sikat halus dengan larutan titik nyala tinggi, lalu lumasi memakai pelumas khusus rantai atau oli gardan/transmisi SAE 80/90.\n\nCek buku panduan Hal 44 (49 PDF)`,
         checked: false
       },
       {
         id: generateId('chk'),
         task: 'Pernapasan Bak Mesin',
-        desc: `Periksa bagian tembus pandang dari selang pembuangan. Bersihkan endapan di dalam selang dengan lebih sering jika motor sering dikendarai dalam kondisi hujan, kecepatan tinggi, atau setelah motor dicuci.`,
+        desc: `Periksa bagian tembus pandang dari selang pembuangan. Bersihkan endapan di dalam selang dengan lebih sering jika motor sering dikendarai dalam kondisi hujan, kecepatan tinggi, atau setelah motor dicuci.\n\nCek panduan hal. 45 (50 PDF)`,
         checked: false
       },
       {
         id: generateId('chk'),
-        task: 'Pembersihan Rangka dan Bodi',
-        desc: `Cuci motor secara menyeluruh menggunakan selang tekanan rendah, terutama setelah melewati area pesisir pantai (air laut/garam) atau jalan berlumpur untuk menghindari korosi pada komponen aluminium dan rangka.`,
+        task: 'Pembersihan Rangka, Bodi, dan Teleskopik Shock Depan',
+        desc: `Cuci motor secara menyeluruh menggunakan selang tekanan rendah, terutama setelah melewati area pesisir pantai (air laut/garam) atau jalan berlumpur untuk menghindari korosi pada komponen aluminium, dan rangka, serta teleskopik shock depan dilap dengan kanebo. Cek buku panduan hal 84-87 (89-92 PDF Merawat Kendaraan Anda)`,
         checked: false
-      }
+      },
     ];
 
     activeVeh.routine_checks.monthly = [
       {
         id: generateId('chk'),
-        task: 'Penyetelan Jarak Renggang Klep (4000 km)',
-        desc: `Periksa renggang klep dalam kondisi mesin dingin. Renggang yang salah menyebabkan kebisingan atau penurunan performa.\n\nSpesifikasi:\n* Klep Masuk (In): 0,10 ± 0,02 mm\n* Klep Buang (Ex): 0,15 ± 0,02 mm`,
+        task: 'Cek kondisi aki',
+        desc: `Pastikan aki terpasang kencang dan terminal bersih dari korosi. Cek indikator level cairan jika menggunakan aki basah.\n\nTips: Hindari membiarkan motor terlalu lama tanpa digunakan untuk mencegah aki tekor. Cek buku panduan hal. 52 (57 PDF Pembukaan cover samping), 40 (45 PDF), 49-50 (54-55 Pemasangan Aki)`,
         checked: false
-      }
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cek kondisi sekring',
+        desc: `Cek sekring yang putus. Cek buku panduan hal. 41 (46 PDF Memeriksa dan Mengganti Sekring), 79 (84 PDF Sekring Putus)`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Cek suspensi belakang',
+        desc: `Cek buku panduan hal. 67 (72 PDF Menyetel Suspensi Belakang)`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Malfunction Indicator Lamp (MIL) PGM-FI (Prgrammed Fuel Injection)',
+        desc: `Jika indikator menyala saat mesin menyala, segera matikan mesin, tunggu 10 detik, lalu hidupkan kembali. Jika lampu tetap menyala, bawa motor ke bengkel AHASS terdekat.`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Kerusakan meter bahan bakar',
+        desc: `Cek buku panduan hal. 72 (77 PDF).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Bohlam lampu mati',
+        desc: `Cek buku panduan hal. 75-78 (80-83 PDF).`,
+        checked: false
+      },
+      {
+        id: generateId('chk'),
+        task: 'Indikator oli mesin tidak menyala saat kunci kontak ON',
+        desc: `Cek buku panduan hal. 51 (56 PDF).`,
+        checked: false
+      },
+
     ];
 
     saveAppState(state);
@@ -929,6 +1002,12 @@ document.addEventListener('DOMContentLoaded', () => {
         state.active_vehicle_id = selectedId;
         saveAppState(state);
         window.componentsPage = 1;
+        window.dashboardSearchQuery = '';
+        window.componentsSearchQuery = '';
+        const searchDash = document.getElementById('search-dashboard');
+        if (searchDash) searchDash.value = '';
+        const searchComp = document.getElementById('search-components');
+        if (searchComp) searchComp.value = '';
         renderAll(state);
         showToast(`Switched active profile`, 'success');
       }

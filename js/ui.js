@@ -285,7 +285,33 @@ function renderServiceTable(state) {
   // Active odometer to compute dynamic status for config list view
   const currentOdo = state.meta?.current_odometer || 0;
   const enriched = computeAllServices(services, currentOdo);
-  const sortedEnriched = sortServices(enriched, window.componentsSortMode || 'default');
+
+  // Search filtering
+  const componentsQuery = (window.componentsSearchQuery || '').toLowerCase().trim();
+  const filteredEnriched = enriched.filter(s => {
+    if (!componentsQuery) return true;
+    const nameMatch = s.name ? s.name.toLowerCase().includes(componentsQuery) : false;
+    const notesMatch = s.notes ? s.notes.toLowerCase().includes(componentsQuery) : false;
+    const descMatch = s.desc ? s.desc.toLowerCase().includes(componentsQuery) : false;
+    const descriptionMatch = s.description ? s.description.toLowerCase().includes(componentsQuery) : false;
+    
+    let numMatch = false;
+    if (!isNaN(parseInt(componentsQuery, 10))) {
+      const sInterval = String(s.interval_km || '');
+      const sWarning = String(s.warning_threshold || '');
+      const sLast = String(s.last_service_odometer || '');
+      const sNext = String(s.nextOdometer || '');
+      
+      numMatch = sInterval.includes(componentsQuery) || 
+                 sWarning.includes(componentsQuery) || 
+                 sLast.includes(componentsQuery) || 
+                 sNext.includes(componentsQuery);
+    }
+    
+    return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
+  });
+
+  const sortedEnriched = sortServices(filteredEnriched, window.componentsSortMode || 'default');
 
   // Pagination setup
   window.componentsPage = window.componentsPage || 1;
@@ -797,7 +823,33 @@ function renderAll(state) {
 
   // Compute parts deltas
   const enriched = computeAllServices(activeVeh.services, activeVeh.meta.current_odometer);
-  const sorted = sortServices(enriched, window.dashboardSortMode || 'priority');
+
+  // Search filtering
+  const dashboardQuery = (window.dashboardSearchQuery || '').toLowerCase().trim();
+  const filteredEnriched = enriched.filter(s => {
+    if (!dashboardQuery) return true;
+    const nameMatch = s.name ? s.name.toLowerCase().includes(dashboardQuery) : false;
+    const notesMatch = s.notes ? s.notes.toLowerCase().includes(dashboardQuery) : false;
+    const descMatch = s.desc ? s.desc.toLowerCase().includes(dashboardQuery) : false;
+    const descriptionMatch = s.description ? s.description.toLowerCase().includes(dashboardQuery) : false;
+    
+    let numMatch = false;
+    if (!isNaN(parseInt(dashboardQuery, 10))) {
+      const sInterval = String(s.interval_km || '');
+      const sWarning = String(s.warning_threshold || '');
+      const sLast = String(s.last_service_odometer || '');
+      const sNext = String(s.nextOdometer || '');
+      
+      numMatch = sInterval.includes(dashboardQuery) || 
+                 sWarning.includes(dashboardQuery) || 
+                 sLast.includes(dashboardQuery) || 
+                 sNext.includes(dashboardQuery);
+    }
+    
+    return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
+  });
+
+  const sorted = sortServices(filteredEnriched, window.dashboardSortMode || 'priority');
 
   renderServiceCards(sorted, activeVeh);
   renderServiceTable(scopedState);

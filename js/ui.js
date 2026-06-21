@@ -386,7 +386,7 @@ function renderServiceTable(state) {
       <tr>
         <td>
           <strong>${s.name}</strong>
-          ${s.notes ? `<div class="component-notes">${parseMarkdown(s.notes)}</div>` : ''}
+          ${s.notes ? `<button type="button" class="notes-link-btn btn-view-service-notes" data-id="${s.id}">📝 View Notes</button>` : ''}
         </td>
         <td class="cell-display">${intervalText}</td>
         <td class="cell-display">${warningText}</td>
@@ -407,7 +407,7 @@ function renderServiceTable(state) {
         <div class="component-card-header">
           <div style="display: flex; flex-direction: column; gap: 4px;">
             <strong class="component-card-name">${s.name}</strong>
-            ${s.notes ? `<div class="component-notes">${parseMarkdown(s.notes)}</div>` : ''}
+            ${s.notes ? `<button type="button" class="notes-link-btn btn-view-service-notes" data-id="${s.id}">📝 View Notes</button>` : ''}
           </div>
           <div class="component-card-actions">
             <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>

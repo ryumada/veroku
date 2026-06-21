@@ -317,6 +317,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteBtn = e.target.closest('.btn-delete');
 
     const activeVeh = getActiveVehicle(state);
+    const notesBtn = e.target.closest('.btn-view-service-notes');
+
+    if (notesBtn) {
+      const id = notesBtn.getAttribute('data-id');
+      const service = activeVeh.services.find(s => s.id === id);
+      if (service && service.notes) {
+        const titleEl = document.getElementById('service-notes-title');
+        const bodyEl = document.getElementById('service-notes-body');
+        if (titleEl) titleEl.textContent = `${service.name} Notes`;
+        if (bodyEl) bodyEl.innerHTML = parseMarkdown(service.notes);
+        document.getElementById('modal-service-notes-view')?.removeAttribute('hidden');
+      }
+      return;
+    }
+
     if (editBtn) {
       const id = editBtn.getAttribute('data-id');
       const service = activeVeh.services.find(s => s.id === id);

@@ -695,7 +695,11 @@ function generateChecklistHTML(items, type) {
       <div class="checklist-item ${checkedClass} ${hasDescClass}" data-type="${type}" data-id="${item.id}">
         <div class="chk-checkbox-wrap">
           <input type="checkbox" ${checkedAttr} id="chk-${type}-${item.id}">
-          <span class="chk-checkmark"></span>
+          <span class="chk-checkmark">
+            <svg class="chk-svg" viewBox="0 0 24 24" width="14" height="14" fill="none">
+              <path class="chk-path" d="M4.5 12.5L9.5 17.5L19.5 6.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
         </div>
         <div class="chk-details">
           <div class="chk-name" data-id="${item.id}">${item.task}</div>
@@ -1017,8 +1021,8 @@ function renderAll(state) {
   renderSettings(state);
 
   // Render cost summary and history logs
-  renderCostSummary(activeVeh);
-  renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
+  renderCostSummary(activeVeh, window.costFilterMode || 'yearly', window.costActiveDate || new Date());
+  renderServiceHistory(activeVeh, window.historyFilterMode || 'monthly', window.historyActiveDate || new Date());
 }
 
 /**
@@ -1255,16 +1259,84 @@ function renderVehicleSelector(state) {
 /**
  * Render the aggregated cost summary block in View B.
  * @param {object} activeVeh
+ * @param {string} [filterMode] 'monthly' | 'yearly' | 'all'
+ * @param {Date} [activeDate] Active date filter context
  */
-function renderCostSummary(activeVeh) {
+function renderCostSummary(activeVeh, filterMode, activeDate) {
   const container = document.getElementById('cost-summary-content');
   if (!container) return;
 
-  const history = activeVeh.service_history || [];
-  const summary = computeCostSummary(history);
+  const mode = filterMode || window.costFilterMode || 'yearly';
+  const date = activeDate || window.costActiveDate || new Date();
 
+  // Sync toggle buttons
+  const monthlyBtn = document.getElementById('btn-cost-monthly');
+  const yearlyBtn = document.getElementById('btn-cost-yearly');
+  const allBtn = document.getElementById('btn-cost-all');
+  if (monthlyBtn && yearlyBtn && allBtn) {
+    monthlyBtn.classList.toggle('active', mode === 'monthly');
+    yearlyBtn.classList.toggle('active', mode === 'yearly');
+    allBtn.classList.toggle('active', mode === 'all');
+  }
+
+  // Sync date navigation bar visibility and labels
+  const navControls = document.getElementById('cost-date-nav-controls');
+  const displayLabel = document.getElementById('cost-date-display');
+  const monthPicker = document.getElementById('cost-month-picker');
+
+  if (navControls) {
+    if (mode === 'all') {
+      navControls.setAttribute('hidden', 'true');
+    } else {
+      navControls.removeAttribute('hidden');
+    }
+  }
+
+  const yearVal = date.getFullYear();
+  const monthIdx = date.getMonth();
+  const monthValStr = `${yearVal}-${String(monthIdx + 1).padStart(2, '0')}`;
+
+  if (displayLabel) {
+    if (mode === 'monthly') {
+      const monthName = date.toLocaleString('default', { month: 'long' });
+      displayLabel.innerHTML = `${monthName} ${yearVal} <span class="picker-cal-icon">📅</span>`;
+    } else {
+      displayLabel.innerHTML = `${yearVal} <span class="picker-cal-icon">📅</span>`;
+    }
+  }
+
+  if (monthPicker) {
+    monthPicker.value = monthValStr;
+  }
+
+  const history = activeVeh.service_history || [];
   if (history.length === 0) {
     container.innerHTML = `<div style="text-align: center; padding: 16px; color: var(--text-secondary);">No services logged yet. Completing parts trackers will aggregate costs here.</div>`;
+    return;
+  }
+
+  // Filter history based on mode
+  let filtered = history;
+  let timeFrameStr = 'All Time';
+
+  if (mode === 'monthly') {
+    timeFrameStr = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    filtered = history.filter(item => {
+      const itemDate = new Date(item.timestamp);
+      return itemDate.getFullYear() === yearVal && itemDate.getMonth() === monthIdx;
+    });
+  } else if (mode === 'yearly') {
+    timeFrameStr = `${yearVal}`;
+    filtered = history.filter(item => {
+      const itemDate = new Date(item.timestamp);
+      return itemDate.getFullYear() === yearVal;
+    });
+  }
+
+  const summary = computeCostSummary(filtered);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="text-align: center; padding: 16px; color: var(--text-secondary);">No service costs logged for ${timeFrameStr}.</div>`;
     return;
   }
 
@@ -1289,7 +1361,7 @@ function renderCostSummary(activeVeh) {
 
   container.innerHTML = `
     <div class="cost-total-label">
-      Total Maintenance Cost: ${summary.total.toLocaleString()} IDR
+      Total Maintenance Cost (${timeFrameStr}): ${summary.total.toLocaleString()} IDR
     </div>
     <div class="cost-breakdown-container">
       <h4 class="per-component-title">Spend Per Component</h4>
@@ -1324,16 +1396,24 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
     }
   }
 
-  // Format navigation text display
+  // Format navigation text display & month picker value
   const displayLabel = document.getElementById('history-date-display');
+  const monthPicker = document.getElementById('history-month-picker');
+  const yearVal = date.getFullYear();
+  const monthIdx = date.getMonth();
+  const monthValStr = `${yearVal}-${String(monthIdx + 1).padStart(2, '0')}`;
+
   if (displayLabel) {
-    const yearVal = date.getFullYear();
     if (mode === 'monthly') {
       const monthName = date.toLocaleString('default', { month: 'long' });
-      displayLabel.textContent = `${monthName} ${yearVal}`;
+      displayLabel.innerHTML = `${monthName} ${yearVal} <span class="picker-cal-icon">📅</span>`;
     } else {
-      displayLabel.textContent = `${yearVal}`;
+      displayLabel.innerHTML = `${yearVal} <span class="picker-cal-icon">📅</span>`;
     }
+  }
+
+  if (monthPicker) {
+    monthPicker.value = monthValStr;
   }
 
   const history = activeVeh.service_history || [];

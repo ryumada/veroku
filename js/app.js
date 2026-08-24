@@ -1305,13 +1305,81 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================================================
-  // SERVICE HISTORY DATE NAVIGATION ACTIONS
+  // COST SUMMARY FILTER & DATE NAVIGATION ACTIONS
   // ==========================================================================
+  window.costFilterMode = window.costFilterMode || 'yearly';
+  window.costActiveDate = window.costActiveDate || new Date();
+
+  const btnCostMonthly = document.getElementById('btn-cost-monthly');
+  const btnCostYearly = document.getElementById('btn-cost-yearly');
+  const btnCostAll = document.getElementById('btn-cost-all');
+  const btnCostPrev = document.getElementById('btn-cost-prev');
+  const btnCostNext = document.getElementById('btn-cost-next');
+  const btnCostNow = document.getElementById('btn-cost-now');
+  const costMonthPicker = document.getElementById('cost-month-picker');
+
+  if (btnCostMonthly && btnCostYearly && btnCostAll) {
+    btnCostMonthly.addEventListener('click', () => {
+      window.costFilterMode = 'monthly';
+      const activeVeh = getActiveVehicle(state);
+      renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+    });
+
+    btnCostYearly.addEventListener('click', () => {
+      window.costFilterMode = 'yearly';
+      const activeVeh = getActiveVehicle(state);
+      renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+    });
+
+    btnCostAll.addEventListener('click', () => {
+      window.costFilterMode = 'all';
+      const activeVeh = getActiveVehicle(state);
+      renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+    });
+
+    const stepCostDate = (step) => {
+      const d = window.costActiveDate;
+      if (window.costFilterMode === 'monthly') {
+        window.costActiveDate = new Date(d.getFullYear(), d.getMonth() + step, 1);
+      } else {
+        window.costActiveDate = new Date(d.getFullYear() + step, 0, 1);
+      }
+      const activeVeh = getActiveVehicle(state);
+      renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+    };
+
+    btnCostPrev?.addEventListener('click', () => stepCostDate(-1));
+    btnCostNext?.addEventListener('click', () => stepCostDate(1));
+    btnCostNow?.addEventListener('click', () => {
+      window.costActiveDate = new Date();
+      const activeVeh = getActiveVehicle(state);
+      renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+    });
+
+    if (costMonthPicker) {
+      costMonthPicker.addEventListener('change', (e) => {
+        if (e.target.value) {
+          const [yr, mo] = e.target.value.split('-').map(Number);
+          window.costActiveDate = new Date(yr, mo - 1, 1);
+          const activeVeh = getActiveVehicle(state);
+          renderCostSummary(activeVeh, window.costFilterMode, window.costActiveDate);
+        }
+      });
+    }
+  }
+
+  // ==========================================================================
+  // SERVICE HISTORY DATE NAVIGATION & MONTH PICKER ACTIONS
+  // ==========================================================================
+  window.historyFilterMode = window.historyFilterMode || 'monthly';
+  window.historyActiveDate = window.historyActiveDate || new Date();
+
   const btnHistoryMonthly = document.getElementById('btn-history-monthly');
   const btnHistoryYearly = document.getElementById('btn-history-yearly');
   const btnHistoryPrev = document.getElementById('btn-history-prev');
   const btnHistoryNext = document.getElementById('btn-history-next');
   const btnHistoryNow = document.getElementById('btn-history-now');
+  const historyMonthPicker = document.getElementById('history-month-picker');
 
   if (btnHistoryMonthly && btnHistoryYearly && btnHistoryPrev && btnHistoryNext) {
     btnHistoryMonthly.addEventListener('click', () => {
@@ -1344,6 +1412,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeVeh = getActiveVehicle(state);
       renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
     });
+
+    if (historyMonthPicker) {
+      historyMonthPicker.addEventListener('change', (e) => {
+        if (e.target.value) {
+          const [yr, mo] = e.target.value.split('-').map(Number);
+          window.historyActiveDate = new Date(yr, mo - 1, 1);
+          const activeVeh = getActiveVehicle(state);
+          renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
+        }
+      });
+    }
   }
 
   // Register PWA service worker

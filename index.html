@@ -318,6 +318,25 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <div class="card cost-summary-card">
             <h3>Cost Summary</h3>
             <p class="form-desc">Total spending on vehicle maintenance.</p>
+            
+            <!-- Cost Summary Filter & Date Controls -->
+            <div class="history-nav-bar cost-nav-bar">
+              <div class="history-filter-toggles">
+                <button type="button" id="btn-cost-monthly" class="nav-btn-sm">Monthly</button>
+                <button type="button" id="btn-cost-yearly" class="nav-btn-sm active">Yearly</button>
+                <button type="button" id="btn-cost-all" class="nav-btn-sm">All</button>
+              </div>
+              <div class="history-date-nav" id="cost-date-nav-controls">
+                <button type="button" id="btn-cost-prev" class="nav-btn-arrow">◀</button>
+                <div class="picker-display-wrap" id="cost-picker-wrap" title="Click to pick month or year">
+                  <span id="cost-date-display" class="history-date-label">2026</span>
+                  <input type="month" id="cost-month-picker" class="history-month-picker" aria-label="Pick Month and Year">
+                </div>
+                <button type="button" id="btn-cost-next" class="nav-btn-arrow">▶</button>
+                <button type="button" id="btn-cost-now" class="nav-btn-sm btn-now">Now</button>
+              </div>
+            </div>
+
             <div id="cost-summary-content">
               <!-- Dynamically populated total cost & component costs list -->
             </div>
@@ -335,7 +354,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
               </div>
               <div class="history-date-nav">
                 <button type="button" id="btn-history-prev" class="nav-btn-arrow">◀</button>
-                <span id="history-date-display" class="history-date-label">June 2026</span>
+                <div class="picker-display-wrap" id="history-picker-wrap" title="Click to pick month or year">
+                  <span id="history-date-display" class="history-date-label">June 2026</span>
+                  <input type="month" id="history-month-picker" class="history-month-picker" aria-label="Pick Month and Year">
+                </div>
                 <button type="button" id="btn-history-next" class="nav-btn-arrow">▶</button>
                 <button type="button" id="btn-history-now" class="nav-btn-sm btn-now">Now</button>
               </div>

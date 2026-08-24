@@ -5,25 +5,6 @@
  * @requires None
  */
 
-/**
- * Calculate target odometer for next maintenance event.
- * @param {number} lastServiceOdometer
- * @param {number} intervalKm
- * @returns {number}
- */
-function computeNextOdometer(lastServiceOdometer, intervalKm) {
-  return (lastServiceOdometer || 0) + (intervalKm || 0);
-}
-
-/**
- * Calculate remaining distance delta.
- * @param {number} currentOdometer
- * @param {number} nextOdometer
- * @returns {number}
- */
-function computeRemainingDelta(currentOdometer, nextOdometer) {
-  return (nextOdometer || 0) - (currentOdometer || 0);
-}
 
 /**
  * Calculate the remaining distance margin at which the warning status triggers.
@@ -54,40 +35,6 @@ function computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, last
   return 200;
 }
 
-/**
- * Classify the remaining delta into a functional status category.
- * @param {number} deltaRemaining
- * @param {number} intervalKm
- * @param {number} [warningThreshold]
- * @param {number} [nextOdometer]
- * @param {number} [lastServiceOdometer]
- * @returns {{label: string, emoji: string, cssClass: string}}
- */
-function classifyStatus(deltaRemaining, intervalKm, warningThreshold, nextOdometer, lastServiceOdometer) {
-  if (deltaRemaining <= 0) {
-    return {
-      label: '🚨 OVERDUE!',
-      emoji: '🚨',
-      cssClass: 'status--critical'
-    };
-  }
-
-  const warningLimit = computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, lastServiceOdometer);
-
-  if (deltaRemaining <= warningLimit) {
-    return {
-      label: '⚠️ Due Soon',
-      emoji: '⚠️',
-      cssClass: 'status--warning'
-    };
-  } else {
-    return {
-      label: '✅ Optimal',
-      emoji: '✅',
-      cssClass: 'status--optimal'
-    };
-  }
-}
 
 /**
  * Add value and unit duration to a date string.
@@ -127,15 +74,6 @@ function convertToDays(value, unit) {
   return val;
 }
 
-/**
- * Get approximate number of warning days for time thresholds.
- * @param {number} value
- * @param {string} unit
- * @returns {number}
- */
-function getWarningDays(value, unit) {
-  return convertToDays(value, unit) || 7;
-}
 
 /**
  * Enrich a list of raw services with calculated attributes.

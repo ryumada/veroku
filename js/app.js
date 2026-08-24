@@ -503,9 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('btn-close-add-routine')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-add-routine')?.addEventListener('click', closeModal);
-
   const formAddRoutine = document.getElementById('form-add-routine');
   if (formAddRoutine) {
     formAddRoutine.addEventListener('submit', (e) => {
@@ -542,18 +539,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // CHECKLIST RESET ROUTINES
   // ==========================================================================
   function resetChecklist(type) {
-    state.routine_checks[type].forEach(item => item.checked = false);
+    const activeVeh = getActiveVehicle(state);
+    if (activeVeh.routine_checks && activeVeh.routine_checks[type]) {
+      activeVeh.routine_checks[type].forEach(item => item.checked = false);
+    }
     saveAppState(state);
     renderAll(state);
     showToast(`Reset ${type} checklist tasks.`, 'success');
   }
 
-  document.getElementById('btn-reset-daily')?.addEventListener('click', () => resetChecklist('daily'));
-  document.getElementById('btn-reset-weekly')?.addEventListener('click', () => resetChecklist('weekly'));
-  document.getElementById('btn-reset-monthly')?.addEventListener('click', () => resetChecklist('monthly'));
-  document.getElementById('btn-reset-daily-modal')?.addEventListener('click', () => resetChecklist('daily'));
-  document.getElementById('btn-reset-weekly-modal')?.addEventListener('click', () => resetChecklist('weekly'));
-  document.getElementById('btn-reset-monthly-modal')?.addEventListener('click', () => resetChecklist('monthly'));
+  ['daily', 'weekly', 'monthly'].forEach(type => {
+    document.getElementById(`btn-reset-${type}`)?.addEventListener('click', () => resetChecklist(type));
+    document.getElementById(`btn-reset-${type}-modal`)?.addEventListener('click', () => resetChecklist(type));
+  });
 
   // ==========================================================================
   // ROUTINES MODAL TRIGGERS
@@ -567,13 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-open-monthly')?.addEventListener('click', () => {
     document.getElementById('modal-monthly')?.removeAttribute('hidden');
   });
-
-  document.getElementById('btn-close-daily-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-confirm-daily-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-close-weekly-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-confirm-weekly-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-close-monthly-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-confirm-monthly-modal')?.addEventListener('click', closeModal);
 
   // ==========================================================================
   // BACKUP & RESTORE DATA WIRING (EXPORT & TWO-STEP IMPORT)
@@ -639,8 +630,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('btn-close-edit')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-edit')?.addEventListener('click', closeModal);
+  const modalCloseBtnIds = [
+    'btn-close-daily-modal', 'btn-confirm-daily-modal',
+    'btn-close-weekly-modal', 'btn-confirm-weekly-modal',
+    'btn-close-monthly-modal', 'btn-confirm-monthly-modal',
+    'btn-close-edit', 'btn-cancel-edit',
+    'btn-cancel-import', 'btn-cancel-delete',
+    'btn-close-add-routine', 'btn-cancel-add-routine',
+    'btn-close-add-vehicle', 'btn-cancel-add-vehicle',
+    'btn-close-service-log', 'btn-cancel-service-log',
+    'btn-close-odo-history', 'btn-close-odo-history-footer',
+    'btn-close-edit-vehicle', 'btn-cancel-edit-vehicle',
+    'btn-cancel-delete-vehicle',
+    'btn-close-routine-desc-view', 'btn-close-routine-desc-view-footer',
+    'btn-close-service-notes-view', 'btn-close-service-notes-view-footer'
+  ];
+  modalCloseBtnIds.forEach(id => {
+    document.getElementById(id)?.addEventListener('click', closeModal);
+  });
 
   // ==========================================================================
   // SETTINGS SUBMIT HANDLER
@@ -1055,9 +1062,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('btn-close-add-vehicle')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-add-vehicle')?.addEventListener('click', closeModal);
-
   // Service Confirmation Form Submit Handler
   const formServiceLog = document.getElementById('form-service-log');
   if (formServiceLog) {
@@ -1085,9 +1089,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('btn-close-service-log')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-service-log')?.addEventListener('click', closeModal);
-
   // Odometer History trigger listener (Event delegation from body)
   document.body.addEventListener('click', (e) => {
     const triggerBtn = e.target.closest('#btn-trigger-odo-history');
@@ -1097,9 +1098,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('modal-odometer-history').removeAttribute('hidden');
     }
   });
-
-  document.getElementById('btn-close-odo-history')?.addEventListener('click', closeModal);
-  document.getElementById('btn-close-odo-history-footer')?.addEventListener('click', closeModal);
 
   // Odometer History pagination controls
   const btnOdoPrev = document.getElementById('btn-odo-prev');
@@ -1181,9 +1179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('btn-close-edit-vehicle')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-edit-vehicle')?.addEventListener('click', closeModal);
-
   // ==========================================================================
   // DELETE VEHICLE PROFILE ACTIONS (WITH TWO-STEP VERIFICATION)
   // ==========================================================================
@@ -1233,16 +1228,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('btn-cancel-delete-vehicle')?.addEventListener('click', closeModal);
-
-  // Routine Description modal close listeners
-  document.getElementById('btn-close-routine-desc-view')?.addEventListener('click', closeModal);
-  document.getElementById('btn-close-routine-desc-view-footer')?.addEventListener('click', closeModal);
-
-  // Service Notes modal close listeners
-  document.getElementById('btn-close-service-notes-view')?.addEventListener('click', closeModal);
-  document.getElementById('btn-close-service-notes-view-footer')?.addEventListener('click', closeModal);
-
   // ==========================================================================
   // SERVICE HISTORY DATE NAVIGATION ACTIONS
   // ==========================================================================
@@ -1265,28 +1250,19 @@ document.addEventListener('DOMContentLoaded', () => {
       renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
     });
 
-    btnHistoryPrev.addEventListener('click', () => {
+    const stepHistoryDate = (step) => {
       const d = window.historyActiveDate;
       if (window.historyFilterMode === 'monthly') {
-        window.historyActiveDate = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+        window.historyActiveDate = new Date(d.getFullYear(), d.getMonth() + step, 1);
       } else {
-        window.historyActiveDate = new Date(d.getFullYear() - 1, 0, 1);
+        window.historyActiveDate = new Date(d.getFullYear() + step, 0, 1);
       }
       const activeVeh = getActiveVehicle(state);
       renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
-    });
+    };
 
-    btnHistoryNext.addEventListener('click', () => {
-      const d = window.historyActiveDate;
-      if (window.historyFilterMode === 'monthly') {
-        window.historyActiveDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      } else {
-        window.historyActiveDate = new Date(d.getFullYear() + 1, 0, 1);
-      }
-      const activeVeh = getActiveVehicle(state);
-      renderServiceHistory(activeVeh, window.historyFilterMode, window.historyActiveDate);
-    });
-
+    btnHistoryPrev.addEventListener('click', () => stepHistoryDate(-1));
+    btnHistoryNext.addEventListener('click', () => stepHistoryDate(1));
     btnHistoryNow?.addEventListener('click', () => {
       window.historyActiveDate = new Date();
       const activeVeh = getActiveVehicle(state);

@@ -279,30 +279,38 @@ function renderServiceTable(state) {
   const currentOdo = state.meta?.current_odometer || 0;
   const enriched = computeAllServices(services, currentOdo);
 
+/**
+ * Test whether a service matches a search query string.
+ * @param {object} service
+ * @param {string} query
+ * @returns {boolean}
+ */
+function matchesServiceQuery(service, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  if (!q) return true;
+
+  const nameMatch = service.name ? service.name.toLowerCase().includes(q) : false;
+  const notesMatch = service.notes ? service.notes.toLowerCase().includes(q) : false;
+  const descMatch = service.desc ? service.desc.toLowerCase().includes(q) : false;
+  const descriptionMatch = service.description ? service.description.toLowerCase().includes(q) : false;
+
+  let numMatch = false;
+  if (!isNaN(parseInt(q, 10))) {
+    const sInterval = String(service.interval_km || '');
+    const sWarning = String(service.warning_threshold || '');
+    const sLast = String(service.last_service_odometer || '');
+    const sNext = String(service.nextOdometer || '');
+
+    numMatch = sInterval.includes(q) || sWarning.includes(q) || sLast.includes(q) || sNext.includes(q);
+  }
+
+  return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
+}
+
   // Search filtering
-  const componentsQuery = (window.componentsSearchQuery || '').toLowerCase().trim();
-  const filteredEnriched = enriched.filter(s => {
-    if (!componentsQuery) return true;
-    const nameMatch = s.name ? s.name.toLowerCase().includes(componentsQuery) : false;
-    const notesMatch = s.notes ? s.notes.toLowerCase().includes(componentsQuery) : false;
-    const descMatch = s.desc ? s.desc.toLowerCase().includes(componentsQuery) : false;
-    const descriptionMatch = s.description ? s.description.toLowerCase().includes(componentsQuery) : false;
-    
-    let numMatch = false;
-    if (!isNaN(parseInt(componentsQuery, 10))) {
-      const sInterval = String(s.interval_km || '');
-      const sWarning = String(s.warning_threshold || '');
-      const sLast = String(s.last_service_odometer || '');
-      const sNext = String(s.nextOdometer || '');
-      
-      numMatch = sInterval.includes(componentsQuery) || 
-                 sWarning.includes(componentsQuery) || 
-                 sLast.includes(componentsQuery) || 
-                 sNext.includes(componentsQuery);
-    }
-    
-    return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
-  });
+  const componentsQuery = window.componentsSearchQuery || '';
+  const filteredEnriched = enriched.filter(s => matchesServiceQuery(s, componentsQuery));
 
   const sortedEnriched = sortServices(filteredEnriched, window.componentsSortMode || 'default');
 
@@ -472,47 +480,32 @@ function renderServiceTable(state) {
  */
 function parseMarkdown(text) {
   if (!text) return '';
-  // Escape HTML to prevent XSS
   let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code>$1</code>');
 
-  // Bold: **text**
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  // Italics: *text*
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Inline code: `code`
-  html = html.replace(/`(.*?)`/g, '<code>$1</code>');
-
-  // Parse bullet points
+  // Bullet points
   const lines = html.split('\n');
   let inList = false;
-  const processedLines = lines.map(line => {
+  const processed = lines.map(line => {
     const trimmed = line.trim();
-    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      const content = trimmed.substring(2);
-      let prefix = '';
-      if (!inList) {
-        inList = true;
-        prefix = '<ul class="markdown-list">';
-      }
-      return prefix + `<li>${content}</li>`;
-    } else {
-      let prefix = '';
-      if (inList) {
-        inList = false;
-        prefix = '</ul>';
-      }
-      return prefix + line;
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('● ')) {
+      const content = trimmed.replace(/^[-*●]\s+/, '');
+      const prefix = inList ? '' : '<ul class="markdown-list">';
+      inList = true;
+      return `${prefix}<li>${content}</li>`;
     }
+    const prefix = inList ? '</ul>' : '';
+    inList = false;
+    return `${prefix}${line}`;
   });
-  if (inList) {
-    processedLines.push('</ul>');
-  }
-  return processedLines.join('<br>')
+  if (inList) processed.push('</ul>');
+
+  return processed.join('<br>')
     .replace(/<\/ul><br>/g, '</ul>')
     .replace(/<ul class="markdown-list"><br>/g, '<ul class="markdown-list">');
 }
@@ -836,29 +829,8 @@ function renderAll(state) {
   const enriched = computeAllServices(activeVeh.services, activeVeh.meta.current_odometer);
 
   // Search filtering
-  const dashboardQuery = (window.dashboardSearchQuery || '').toLowerCase().trim();
-  const filteredEnriched = enriched.filter(s => {
-    if (!dashboardQuery) return true;
-    const nameMatch = s.name ? s.name.toLowerCase().includes(dashboardQuery) : false;
-    const notesMatch = s.notes ? s.notes.toLowerCase().includes(dashboardQuery) : false;
-    const descMatch = s.desc ? s.desc.toLowerCase().includes(dashboardQuery) : false;
-    const descriptionMatch = s.description ? s.description.toLowerCase().includes(dashboardQuery) : false;
-    
-    let numMatch = false;
-    if (!isNaN(parseInt(dashboardQuery, 10))) {
-      const sInterval = String(s.interval_km || '');
-      const sWarning = String(s.warning_threshold || '');
-      const sLast = String(s.last_service_odometer || '');
-      const sNext = String(s.nextOdometer || '');
-      
-      numMatch = sInterval.includes(dashboardQuery) || 
-                 sWarning.includes(dashboardQuery) || 
-                 sLast.includes(dashboardQuery) || 
-                 sNext.includes(dashboardQuery);
-    }
-    
-    return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
-  });
+  const dashboardQuery = window.dashboardSearchQuery || '';
+  const filteredEnriched = enriched.filter(s => matchesServiceQuery(s, dashboardQuery));
 
   const sorted = sortServices(filteredEnriched, window.dashboardSortMode || 'priority');
 

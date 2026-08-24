@@ -7,30 +7,43 @@
 
 const STORAGE_KEY = 'v_manager_db_v2';
 
+/**
+ * Create a default vehicle profile object structure.
+ * @param {string} [id]
+ * @param {string} [name]
+ * @param {string} [icon]
+ * @param {number} [timestamp]
+ * @param {Array<object>} [odometerLog]
+ * @returns {object}
+ */
+function createDefaultVehicleProfile(id = 'v-1', name = 'My Vehicle', icon = '🏍️', timestamp = 0, odometerLog = []) {
+  return {
+    id,
+    name,
+    icon: icon || '🏍️',
+    meta: {
+      current_odometer: 0,
+      last_updated_timestamp: timestamp,
+      daily_reset_date: '',
+      weekly_reset_week: '',
+      streak_days: 0,
+      streak_last_completed_date: ''
+    },
+    services: [],
+    routine_checks: {
+      daily: [],
+      weekly: [],
+      monthly: []
+    },
+    service_history: [],
+    odometer_log: odometerLog
+  };
+}
+
 const DEFAULT_STATE = {
   active_vehicle_id: 'v-1',
   vehicles: {
-    'v-1': {
-      id: 'v-1',
-      name: 'My Vehicle',
-      icon: '🏍️',
-      meta: {
-        current_odometer: 0,
-        last_updated_timestamp: 0,
-        daily_reset_date: '',
-        weekly_reset_week: '',
-        streak_days: 0,
-        streak_last_completed_date: ''
-      },
-      services: [],
-      routine_checks: {
-        daily: [],
-        weekly: [],
-        monthly: []
-      },
-      service_history: [],
-      odometer_log: []
-    }
+    'v-1': createDefaultVehicleProfile('v-1')
   },
   settings: {
     theme: 'dark',
@@ -57,16 +70,12 @@ function generateId(prefix) {
  * @returns {string}
  */
 function getISOWeekString(date) {
-  const tempDate = new Date(date.valueOf());
-  const dayNum = (date.getDay() + 6) % 7;
-  tempDate.setDate(tempDate.getDate() - dayNum + 3);
-  const firstThursday = tempDate.valueOf();
-  tempDate.setMonth(0, 1);
-  if (tempDate.getDay() !== 4) {
-    tempDate.setMonth(0, 1 + ((4 - tempDate.getDay() + 7) % 7));
-  }
-  const weekNum = 1 + Math.ceil((firstThursday - tempDate) / 604800000);
-  return `${tempDate.getFullYear()}-W${weekNum}`;
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${weekNum}`;
 }
 
 /**
@@ -78,27 +87,7 @@ function getActiveVehicle(state) {
   const activeId = state.active_vehicle_id || 'v-1';
   if (!state.vehicles) state.vehicles = {};
   if (!state.vehicles[activeId]) {
-    state.vehicles[activeId] = {
-      id: activeId,
-      name: 'My Vehicle',
-      icon: '🏍️',
-      meta: {
-        current_odometer: 0,
-        last_updated_timestamp: 0,
-        daily_reset_date: '',
-        weekly_reset_week: '',
-        streak_days: 0,
-        streak_last_completed_date: ''
-      },
-      services: [],
-      routine_checks: {
-        daily: [],
-        weekly: [],
-        monthly: []
-      },
-      service_history: [],
-      odometer_log: []
-    };
+    state.vehicles[activeId] = createDefaultVehicleProfile(activeId);
   }
   return state.vehicles[activeId];
 }
@@ -113,29 +102,9 @@ function getActiveVehicle(state) {
 function addVehicleProfile(state, name, icon) {
   const newId = generateId('v');
   if (!state.vehicles) state.vehicles = {};
-  state.vehicles[newId] = {
-    id: newId,
-    name: name,
-    icon: icon || '🏍️',
-    meta: {
-      current_odometer: 0,
-      last_updated_timestamp: Date.now(),
-      daily_reset_date: '',
-      weekly_reset_week: '',
-      streak_days: 0,
-      streak_last_completed_date: ''
-    },
-    services: [],
-    routine_checks: {
-      daily: [],
-      weekly: [],
-      monthly: []
-    },
-    service_history: [],
-    odometer_log: [
-      { odometer: 0, timestamp: Date.now() }
-    ]
-  };
+  state.vehicles[newId] = createDefaultVehicleProfile(newId, name, icon, Date.now(), [
+    { odometer: 0, timestamp: Date.now() }
+  ]);
   state.active_vehicle_id = newId;
   return newId;
 }

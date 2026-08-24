@@ -47,6 +47,7 @@ const DEFAULT_STATE = {
   },
   settings: {
     theme: 'dark',
+    toast_duration: 5,
     reminders: {
       daily: { enabled: false, time: '08:00' },
       weekly: { enabled: false, day: 0, time: '09:00' },

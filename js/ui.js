@@ -62,17 +62,32 @@ function showToast(message, type = 'success') {
   toast.className = `toast toast-${type}`;
 
   const icon = type === 'success' ? '✅' : '❌';
-  toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span>${icon}</span> <span style="flex-grow: 1;">${message}</span> <span style="cursor: pointer; opacity: 0.7; font-size: 15px; margin-left: 8px;" title="Dismiss">&times;</span>`;
 
+  const dismiss = () => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+    toast.style.transition = 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      if (toast.isConnected) toast.remove();
+    }, 210);
+  };
+
+  toast.addEventListener('click', dismiss);
   container.appendChild(toast);
 
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    toast.style.animation = 'modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse';
-    toast.addEventListener('animationend', () => {
-      toast.remove();
-    });
-  }, 3000);
+  // Determine timeout from global state (default 5 seconds)
+  const durationSec = window._appState?.settings?.toast_duration !== undefined
+    ? Number(window._appState.settings.toast_duration)
+    : 5;
+
+  if (durationSec > 0) {
+    setTimeout(() => {
+      if (toast.isConnected) {
+        dismiss();
+      }
+    }, durationSec * 1000);
+  }
 }
 
 /**
@@ -147,9 +162,11 @@ function renderOdometerHUD(state) {
  */
 function renderServiceCards(enrichedServices, activeVeh) {
   const container = document.getElementById('service-cards');
+  const paginationBar = document.getElementById('dashboard-pagination');
   if (!container) return;
 
   if (enrichedServices.length === 0) {
+    if (paginationBar) paginationBar.setAttribute('hidden', 'true');
     container.innerHTML = `
       <div class="tracker-empty">
         <span class="tracker-empty-icon">🏍️</span>
@@ -165,8 +182,22 @@ function renderServiceCards(enrichedServices, activeVeh) {
 
   const avgMileage = computeDailyAvgMileage(activeVeh ? activeVeh.odometer_log : []);
 
+  // Dashboard pagination calculations
+  const totalTrackers = enrichedServices.length;
+  const perPage = window.dashboardPerPage || 12;
+  const totalPages = Math.max(1, Math.ceil(totalTrackers / perPage));
+  if (window.dashboardPage > totalPages) {
+    window.dashboardPage = totalPages;
+  }
+  if (!window.dashboardPage || window.dashboardPage < 1) {
+    window.dashboardPage = 1;
+  }
+
+  const startIndex = (window.dashboardPage - 1) * perPage;
+  const paginatedTrackers = enrichedServices.slice(startIndex, startIndex + perPage);
+
   let html = '';
-  enrichedServices.forEach(s => {
+  paginatedTrackers.forEach(s => {
     const isCritical = s.status.cssClass === 'status--critical';
     const isWarning = s.status.cssClass === 'status--warning';
 
@@ -209,10 +240,80 @@ function renderServiceCards(enrichedServices, activeVeh) {
     }
     if (!nextExpectedText) nextExpectedText = '-';
 
-    let progressPercent = 0;
+    // Compute comprehensive degradation progress percentage (higher of KM or Time progress)
+    let kmPercent = 0;
     if (s.interval_km && s.deltaRemainingKm !== null) {
-      const elapsed = Number(s.interval_km) - s.deltaRemainingKm;
-      progressPercent = Math.min(100, Math.max(0, Math.round((elapsed / Number(s.interval_km)) * 100)));
+      const elapsedKm = Number(s.interval_km) - s.deltaRemainingKm;
+      kmPercent = Math.min(100, Math.max(0, Math.round((elapsedKm / Number(s.interval_km)) * 100)));
+    }
+
+    let timePercent = 0;
+    if (s.interval_time_val && s.last_service_date) {
+      const lastDate = new Date(s.last_service_date);
+      if (!isNaN(lastDate.getTime())) {
+        const elapsedDays = Math.max(0, (new Date() - lastDate) / (1000 * 60 * 60 * 24));
+        const totalDays = convertToDays(s.interval_time_val, s.interval_time_unit);
+        if (totalDays > 0) {
+          timePercent = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
+        }
+      }
+    }
+
+    // Render Dual Gauges (KM and Time)
+    let gaugesHtml = '';
+    const r = 20;
+    const circ = 2 * Math.PI * r; // ~125.66
+
+    if (s.interval_km) {
+      const safeKmPercent = Math.min(100, Math.max(0, kmPercent));
+      const kmOffset = circ - (safeKmPercent / 100) * circ;
+      const kmStatusClass = (s.deltaRemainingKm !== null && s.deltaRemainingKm <= 0) ? 'status--critical' : (kmPercent >= 80 ? 'status--warning' : 'status--optimal');
+      const kmSub = s.deltaRemainingKm !== null ? (s.deltaRemainingKm < 0 ? `${Math.abs(s.deltaRemainingKm)} KM overdue` : `${s.deltaRemainingKm} KM left`) : '';
+
+      gaugesHtml += `
+        <div class="tracker-gauge-item ${kmStatusClass}">
+          <div class="gauge-ring-wrap">
+            <svg class="gauge-svg" viewBox="0 0 52 52">
+              <circle class="gauge-bg" cx="26" cy="26" r="${r}" />
+              <circle class="gauge-fill" cx="26" cy="26" r="${r}"
+                stroke-dasharray="${circ.toFixed(2)}"
+                stroke-dashoffset="${kmOffset.toFixed(2)}" />
+            </svg>
+            <span class="gauge-center-text">${safeKmPercent}%</span>
+          </div>
+          <div class="gauge-info">
+            <span class="gauge-title">Mileage Wear</span>
+            <span class="gauge-val">${s.interval_km} KM</span>
+            ${kmSub ? `<span class="gauge-sub">${kmSub}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    if (s.interval_time_val) {
+      const safeTimePercent = Math.min(100, Math.max(0, timePercent));
+      const timeOffset = circ - (safeTimePercent / 100) * circ;
+      const timeStatusClass = (s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0) ? 'status--critical' : (timePercent >= 80 ? 'status--warning' : 'status--optimal');
+      const timeSub = s.deltaRemainingDays !== null ? (s.deltaRemainingDays < 0 ? `${Math.abs(s.deltaRemainingDays)}d overdue` : `${s.deltaRemainingDays}d left`) : '';
+
+      gaugesHtml += `
+        <div class="tracker-gauge-item ${timeStatusClass}">
+          <div class="gauge-ring-wrap">
+            <svg class="gauge-svg" viewBox="0 0 52 52">
+              <circle class="gauge-bg" cx="26" cy="26" r="${r}" />
+              <circle class="gauge-fill" cx="26" cy="26" r="${r}"
+                stroke-dasharray="${circ.toFixed(2)}"
+                stroke-dashoffset="${timeOffset.toFixed(2)}" />
+            </svg>
+            <span class="gauge-center-text">${safeTimePercent}%</span>
+          </div>
+          <div class="gauge-info">
+            <span class="gauge-title">Time Wear</span>
+            <span class="gauge-val">${s.interval_time_val} ${s.interval_time_unit}</span>
+            ${timeSub ? `<span class="gauge-sub">${timeSub}</span>` : ''}
+          </div>
+        </div>
+      `;
     }
 
     html += `
@@ -224,32 +325,33 @@ function renderServiceCards(enrichedServices, activeVeh) {
 
         <div class="tracker-body">
           <div class="tracker-remaining">
-            <span class="tracker-remaining-header">Maintenance Delta</span>
+            <span class="tracker-remaining-header">MAINTENANCE DELTA</span>
             <span class="tracker-remaining-value">${deltaText}</span>
-            <div class="m3-progress-track" title="${progressPercent}% elapsed">
-              <div class="m3-progress-fill" style="width: ${progressPercent}%;"></div>
-            </div>
             ${forecastHtml}
           </div>
 
-          <div class="tracker-stat">
-            <span class="lbl">Interval Limit</span>
-            <span class="val">${intervalText}</span>
-          </div>
-          <div class="tracker-stat">
-            <span class="lbl">Last Serviced At</span>
-            <span class="val">${lastServiceText}</span>
-          </div>
-          <div class="tracker-stat">
-            <span class="lbl">Next Expected At</span>
-            <span class="val">${nextExpectedText}</span>
+          ${gaugesHtml ? `<div class="tracker-gauges-grid">${gaugesHtml}</div>` : ''}
+
+          <div class="tracker-details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Interval:</span>
+              <span class="detail-val">${intervalText}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Last Log:</span>
+              <span class="detail-val">${lastServiceText}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Next Expected:</span>
+              <span class="detail-val">${nextExpectedText}</span>
+            </div>
           </div>
         </div>
 
         <div class="tracker-actions">
           ${s.notes ? `
-            <button type="button" class="tracker-notes-btn" data-service-id="${s.id}">
-              <span>📝</span> Notes
+            <button class="tracker-notes-btn btn-view-service-notes" data-id="${s.id}">
+              <span>📝</span> View Notes
             </button>
           ` : ''}
           <button class="tracker-done-btn" data-service-id="${s.id}">
@@ -261,6 +363,31 @@ function renderServiceCards(enrichedServices, activeVeh) {
   });
 
   container.innerHTML = html;
+
+  // Render pagination bar
+  if (paginationBar) {
+    paginationBar.removeAttribute('hidden');
+
+    const pageDisplay = document.getElementById('dashboard-page-display');
+    if (pageDisplay) {
+      pageDisplay.textContent = `Page ${window.dashboardPage} of ${totalPages}`;
+    }
+
+    const btnPrev = document.getElementById('btn-dashboard-prev');
+    if (btnPrev) {
+      btnPrev.disabled = window.dashboardPage === 1;
+    }
+
+    const btnNext = document.getElementById('btn-dashboard-next');
+    if (btnNext) {
+      btnNext.disabled = window.dashboardPage === totalPages;
+    }
+
+    const perPageSelect = document.getElementById('select-dashboard-per-page');
+    if (perPageSelect) {
+      perPageSelect.value = perPage;
+    }
+  }
 }
 
 /**
@@ -404,8 +531,14 @@ function renderServiceTable(state) {
         <td class="cell-display">${nextExpectedText}</td>
         <td>
           <div class="table-actions">
-            <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>
-            <button class="tbl-btn btn-delete" data-id="${s.id}">Delete</button>
+            <button class="tbl-btn btn-edit" data-id="${s.id}" title="Edit Component">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>Edit</span>
+            </button>
+            <button class="tbl-btn btn-delete" data-id="${s.id}" title="Delete Component">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              <span>Delete</span>
+            </button>
           </div>
         </td>
       </tr>
@@ -420,8 +553,14 @@ function renderServiceTable(state) {
             ${s.notes ? `<button type="button" class="notes-link-btn btn-view-service-notes" data-id="${s.id}">📝 View Notes</button>` : ''}
           </div>
           <div class="component-card-actions">
-            <button class="tbl-btn btn-edit" data-id="${s.id}">Edit</button>
-            <button class="tbl-btn btn-delete" data-id="${s.id}">Delete</button>
+            <button class="tbl-btn btn-edit" data-id="${s.id}" title="Edit Component">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>Edit</span>
+            </button>
+            <button class="tbl-btn btn-delete" data-id="${s.id}" title="Delete Component">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              <span>Delete</span>
+            </button>
           </div>
         </div>
         <div class="component-card-body">
@@ -793,6 +932,9 @@ function renderSettings(state) {
   if (monthlyDate) monthlyDate.value = r.monthly.date;
   if (monthlyTime) monthlyTime.value = r.monthly.time;
 
+  const toastDuration = document.getElementById('setting-toast-duration');
+  if (toastDuration) toastDuration.value = state.settings?.toast_duration !== undefined ? state.settings.toast_duration : 5;
+
   // Toggle Load Example Data card visibility based on active vehicle profile state
   const activeVeh = getActiveVehicle(state);
   const exampleCard = document.getElementById('card-example-data');
@@ -810,6 +952,8 @@ function renderSettings(state) {
  * @param {object} state
  */
 function renderAll(state) {
+  window._appState = state;
+
   // Sync the theme
   const theme = state.settings?.theme || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
@@ -890,7 +1034,7 @@ function showModal(service) {
   const editNotesEl = document.getElementById('edit-notes');
   if (editNotesEl) editNotesEl.value = service.notes || '';
 
-  modal.removeAttribute('hidden');
+  openModal(modal);
 }
 
 /**
@@ -910,7 +1054,18 @@ function showImportConfirmModal(file) {
   const confirmBtn = document.getElementById('btn-confirm-import');
   if (confirmBtn) confirmBtn.setAttribute('disabled', 'true');
 
+  openModal(modal);
+}
+
+/**
+ * Open a modal overlay safely by ID or element.
+ * @param {string|HTMLElement} modalTarget
+ */
+function openModal(modalTarget) {
+  const modal = typeof modalTarget === 'string' ? document.getElementById(modalTarget) : modalTarget;
+  if (!modal) return;
   modal.removeAttribute('hidden');
+  modal.style.display = '';
 }
 
 /**
@@ -920,7 +1075,7 @@ function closeModal() {
   const overlays = document.querySelectorAll('.modal-overlay');
   overlays.forEach(modal => {
     modal.setAttribute('hidden', 'true');
-    modal.style.display = 'none';
+    modal.style.display = '';
   });
   pendingImportFile = null;
 }
@@ -1213,6 +1368,7 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
 window.renderAll = renderAll;
 window.showToast = showToast;
 window.showModal = showModal;
+window.openModal = openModal;
 window.showImportConfirmModal = showImportConfirmModal;
 window.closeModal = closeModal;
 window.getPendingImportFile = () => pendingImportFile;

@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize sorting and pagination preferences from localStorage
   window.dashboardSortMode = localStorage.getItem('v_dashboard_sort_mode') || 'priority';
+  window.dashboardPage = 1;
+  window.dashboardPerPage = parseInt(localStorage.getItem('v_dashboard_per_page'), 10) || 12;
   window.componentsSortMode = localStorage.getItem('v_components_sort_mode') || 'default';
   window.componentsPage = 1;
   window.componentsPerPage = parseInt(localStorage.getItem('v_components_per_page'), 10) || 10;
@@ -29,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboardSortSelect = document.getElementById('select-dashboard-sort');
   if (dashboardSortSelect) {
     dashboardSortSelect.value = window.dashboardSortMode;
+  }
+  const dashboardPerPageSelect = document.getElementById('select-dashboard-per-page');
+  if (dashboardPerPageSelect) {
+    dashboardPerPageSelect.value = window.dashboardPerPage;
   }
   const componentsSortSelect = document.getElementById('select-components-sort');
   if (componentsSortSelect) {
@@ -43,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchDashboardInput) {
     searchDashboardInput.addEventListener('input', (e) => {
       window.dashboardSearchQuery = e.target.value;
+      window.dashboardPage = 1; // reset pagination page on search query change
       renderAll(state);
     });
   }
@@ -89,6 +96,48 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================================================
+  // NUMERIC INPUT VALIDATION & ALPHABETICAL RESTRICTION
+  // ==========================================================================
+  let lastNonNumericToastTime = 0;
+
+  // Proactively prevent alphabetical / invalid keystrokes on numeric fields
+  document.addEventListener('keydown', (e) => {
+    const target = e.target;
+    if (target && target.tagName === 'INPUT' && target.type === 'number') {
+      // Allow navigation and editing control keys (Backspace, Tab, Delete, Arrows, Enter, Ctrl/Cmd shortcuts)
+      const allowedKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter', 'Escape'];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+      }
+      // Block 'e', 'E', '+', '-', and non-digit characters
+      if (['e', 'E', '+', '-'].includes(e.key) || !/^\d$/.test(e.key)) {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastNonNumericToastTime > 1200) {
+          lastNonNumericToastTime = now;
+          showToast('Only numbers (0-9) are allowed in this field.', 'error');
+        }
+      }
+    }
+  });
+
+  // Sanitize any non-numeric characters pasted into number inputs
+  document.addEventListener('paste', (e) => {
+    const target = e.target;
+    if (target && target.tagName === 'INPUT' && target.type === 'number') {
+      const pasteData = (e.clipboardData || window.clipboardData)?.getData('text');
+      if (pasteData && !/^\d+$/.test(pasteData)) {
+        e.preventDefault();
+        const sanitized = pasteData.replace(/\D/g, '');
+        if (sanitized) {
+          document.execCommand('insertText', false, sanitized);
+        }
+        showToast('Non-numeric characters were removed from pasted text.', 'error');
+      }
+    }
+  });
+
+  // ==========================================================================
   // COMPONENTS VIEW TOGGLE WIRING
   // ==========================================================================
   window.componentsViewMode = localStorage.getItem('v_components_view_mode') || 'table';
@@ -111,6 +160,26 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('select-dashboard-sort')?.addEventListener('change', (e) => {
     window.dashboardSortMode = e.target.value;
     localStorage.setItem('v_dashboard_sort_mode', e.target.value);
+    window.dashboardPage = 1;
+    renderAll(state);
+  });
+
+  document.getElementById('select-dashboard-per-page')?.addEventListener('change', (e) => {
+    window.dashboardPerPage = parseInt(e.target.value, 10);
+    localStorage.setItem('v_dashboard_per_page', e.target.value);
+    window.dashboardPage = 1;
+    renderAll(state);
+  });
+
+  document.getElementById('btn-dashboard-prev')?.addEventListener('click', () => {
+    if (window.dashboardPage > 1) {
+      window.dashboardPage--;
+      renderAll(state);
+    }
+  });
+
+  document.getElementById('btn-dashboard-next')?.addEventListener('click', () => {
+    window.dashboardPage++;
     renderAll(state);
   });
 
@@ -329,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyEl = document.getElementById('service-notes-body');
         if (titleEl) titleEl.textContent = `${service.name} Notes`;
         if (bodyEl) bodyEl.innerHTML = parseMarkdown(service.notes);
-        document.getElementById('modal-service-notes-view')?.removeAttribute('hidden');
+        openModal('modal-service-notes-view');
       }
       return;
     }
@@ -382,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('log-service-name').value = service.name;
           document.getElementById('log-service-cost').value = '';
           document.getElementById('log-service-notes').value = '';
-          document.getElementById('modal-service-log').removeAttribute('hidden');
+          openModal('modal-service-log');
         }
         return;
       }
@@ -397,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const bodyEl = document.getElementById('service-notes-body');
           if (titleEl) titleEl.textContent = `${service.name} Notes`;
           if (bodyEl) bodyEl.innerHTML = parseMarkdown(service.notes);
-          document.getElementById('modal-service-notes-view')?.removeAttribute('hidden');
+          openModal('modal-service-notes-view');
         }
       }
     });
@@ -446,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyEl = document.getElementById('routine-desc-body');
         if (titleEl) titleEl.textContent = list[itemIndex].task;
         if (bodyEl) bodyEl.innerHTML = descEl.innerHTML;
-        document.getElementById('modal-routine-desc-view')?.removeAttribute('hidden');
+        openModal('modal-routine-desc-view');
       }
       return;
     }
@@ -501,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeSelect) {
         typeSelect.value = type;
       }
-      document.getElementById('modal-add-routine')?.removeAttribute('hidden');
+      openModal('modal-add-routine');
     }
   });
 
@@ -559,13 +628,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // ROUTINES MODAL TRIGGERS
   // ==========================================================================
   document.getElementById('btn-open-daily')?.addEventListener('click', () => {
-    document.getElementById('modal-daily')?.removeAttribute('hidden');
+    openModal('modal-daily');
   });
   document.getElementById('btn-open-weekly')?.addEventListener('click', () => {
-    document.getElementById('modal-weekly')?.removeAttribute('hidden');
+    openModal('modal-weekly');
   });
   document.getElementById('btn-open-monthly')?.addEventListener('click', () => {
-    document.getElementById('modal-monthly')?.removeAttribute('hidden');
+    openModal('modal-monthly');
   });
 
   // ==========================================================================
@@ -660,6 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       state.settings = {
+        theme: state.settings?.theme || 'dark',
+        toast_duration: Number(document.getElementById('setting-toast-duration')?.value ?? 5),
         reminders: {
           daily: {
             enabled: document.getElementById('reminder-daily-enabled').checked,
@@ -692,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (actionBtn) {
       const modalId = actionBtn.getAttribute('data-modal');
       if (modalId) {
-        document.getElementById(modalId)?.removeAttribute('hidden');
+        openModal(modalId);
       }
       return;
     }
@@ -707,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('log-service-name').value = service.name;
         document.getElementById('log-service-cost').value = '';
         document.getElementById('log-service-notes').value = '';
-        document.getElementById('modal-service-log').removeAttribute('hidden');
+        openModal('modal-service-log');
       }
     }
   });
@@ -970,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-delete-data-trigger')?.addEventListener('click', () => {
     if (deleteTextInput) deleteTextInput.value = '';
     confirmDeleteBtn?.setAttribute('disabled', 'true');
-    deleteModal?.removeAttribute('hidden');
+    openModal('modal-delete-confirm');
   });
 
   deleteTextInput?.addEventListener('input', (e) => {
@@ -1039,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addVehicleTrigger.addEventListener('click', () => {
       document.getElementById('new-vehicle-name').value = '';
       document.getElementById('new-vehicle-icon').value = '🏍️';
-      document.getElementById('modal-add-vehicle').removeAttribute('hidden');
+      openModal('modal-add-vehicle');
     });
   }
 
@@ -1097,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (triggerBtn) {
       window.odoHistoryPage = 0;
       populateOdometerHistoryModal(state, 0);
-      document.getElementById('modal-odometer-history').removeAttribute('hidden');
+      openModal('modal-odometer-history');
     }
   });
 
@@ -1157,7 +1228,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeVeh = getActiveVehicle(state);
       document.getElementById('edit-vehicle-name').value = activeVeh.name || '';
       document.getElementById('edit-vehicle-icon').value = activeVeh.icon || '🏍️';
-      document.getElementById('modal-edit-vehicle').removeAttribute('hidden');
+      openModal('modal-edit-vehicle');
     });
   }
 
@@ -1200,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (deleteVehicleTextInput) deleteVehicleTextInput.value = '';
       confirmDeleteVehicleBtn?.setAttribute('disabled', 'true');
-      deleteVehicleModal?.removeAttribute('hidden');
+      openModal('modal-delete-vehicle-confirm');
     });
   }
 

@@ -73,7 +73,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="h3-span">Daily Pre-Ride</span>
                 <span class="p-span">Critical checks before ignition</span>
               </span>
-              <span class="arrow">→</span>
+              <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+              </svg>
             </button>
 
             <button type="button" id="btn-open-weekly" class="routine-card-btn">
@@ -82,7 +84,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="h3-span">Weekly Protocol</span>
                 <span class="p-span">Standard routine inspections</span>
               </span>
-              <span class="arrow">→</span>
+              <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+              </svg>
             </button>
 
             <button type="button" id="btn-open-monthly" class="routine-card-btn">
@@ -91,7 +95,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="h3-span">Monthly Protocol</span>
                 <span class="p-span">Deep physical inspections</span>
               </span>
-              <span class="arrow">→</span>
+              <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+              </svg>
             </button>
           </div>
 
@@ -577,44 +583,59 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Data Management Accordion Card -->
           <div class="card settings-card accordion-card" id="accordion-data-mgmt">
-            <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt">
+            <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt" role="button" tabindex="0" aria-expanded="false">
               <div class="accordion-title-wrap">
                 <span class="btn-icon">💾</span>
                 <h3 class="accordion-title">Backup &amp; Data Portability</h3>
               </div>
-              <span class="accordion-arrow">▸</span>
+              <span class="accordion-arrow-wrap">
+                <svg class="accordion-chevron" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                </svg>
+              </span>
             </div>
-            <div class="settings-card-body accordion-body" hidden>
-              <p class="settings-card-description">Export your current data as a backup file, or restore from an
-                existing
-                JSON backup. Restoring will overwrite all local settings and database entries.</p>
-              <div class="data-mgmt-actions">
-                <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
-                  <span>📤</span> Export Backup
-                </button>
-                <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
-                  <span>📥</span> Import Backup
-                </button>
+            <div class="accordion-collapse-wrap">
+              <div class="accordion-collapse-inner">
+                <div class="settings-card-body accordion-body">
+                  <p class="settings-card-description">Export your current data as a backup file, or restore from an
+                    existing JSON backup. Restoring will overwrite all local settings and database entries.</p>
+                  <div class="data-mgmt-actions">
+                    <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
+                      <span>📤</span> Export Backup
+                    </button>
+                    <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
+                      <span>📥</span> Import Backup
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Danger Zone Accordion Card -->
           <div class="card settings-card accordion-card danger-zone-card" id="accordion-danger-zone">
-            <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone">
+            <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone" role="button" tabindex="0" aria-expanded="false">
               <div class="accordion-title-wrap">
                 <span class="btn-icon">⚠️</span>
                 <h3 class="accordion-title danger-title">Danger Zone</h3>
               </div>
-              <span class="accordion-arrow">▸</span>
+              <span class="accordion-arrow-wrap">
+                <svg class="accordion-chevron" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                </svg>
+              </span>
             </div>
-            <div class="settings-card-body accordion-body" hidden>
-              <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and
-                configurations stored in this browser. This process cannot be undone.</p>
-              <div class="data-mgmt-actions">
-                <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
-                  <span>🗑️</span> Delete All Data
-                </button>
+            <div class="accordion-collapse-wrap">
+              <div class="accordion-collapse-inner">
+                <div class="settings-card-body accordion-body">
+                  <p class="settings-card-description">Permanently wipe all vehicle logs, custom safety checklists, and
+                    configurations stored in this browser. This process cannot be undone.</p>
+                  <div class="data-mgmt-actions">
+                    <button type="button" id="btn-delete-data-trigger" class="action-btn danger-btn data-btn">
+                      <span>🗑️</span> Delete All Data
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -884,6 +905,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         <div class="form-group">
           <label for="log-service-name">Component</label>
           <input type="text" id="log-service-name" readonly class="readonly-input">
+        </div>
+        <div class="form-group">
+          <label for="log-service-date">Service Date <span class="required-asterisk">*</span></label>
+          <input type="date" id="log-service-date" required>
         </div>
         <div class="form-group">
           <label for="log-service-cost">Maintenance Cost (IDR / USD) <span class="required-asterisk">*</span></label>

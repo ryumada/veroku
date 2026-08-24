@@ -37,6 +37,42 @@ function computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, last
 
 
 /**
+ * Parse YYYY-MM-DD string into a safe local Date object at 00:00:00 local time.
+ * @param {string} dateStr
+ * @returns {Date}
+ */
+function parseLocalDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    return new Date(y, m, d, 0, 0, 0, 0);
+  }
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+/**
+ * Format Date object into local YYYY-MM-DD string.
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatLocalDate(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Add value and unit duration to a date string.
  * @param {string} dateStr
  * @param {number} value
@@ -44,8 +80,7 @@ function computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, last
  * @returns {Date}
  */
 function addTimeToDate(dateStr, value, unit) {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return new Date();
+  const d = parseLocalDate(dateStr);
   const val = Number(value) || 0;
   if (unit === 'days') {
     d.setDate(d.getDate() + val);
@@ -125,16 +160,15 @@ function computeAllServices(services, currentOdometer) {
     const hasTimeInterval = typeof service.interval_time_val === 'number' && service.interval_time_val > 0;
 
     if (hasTimeInterval || service.one_time_limit_date) {
-      const lastDateStr = service.last_service_date || new Date().toISOString().split('T')[0];
+      const lastDateStr = service.last_service_date || formatLocalDate(today);
       if (service.one_time_limit_date) {
-        nextDueDate = new Date(service.one_time_limit_date);
+        nextDueDate = parseLocalDate(service.one_time_limit_date);
       } else {
         nextDueDate = addTimeToDate(lastDateStr, service.interval_time_val, service.interval_time_unit);
       }
-      nextDueDate.setHours(0, 0, 0, 0);
 
       const diffMs = nextDueDate.getTime() - today.getTime();
-      deltaRemainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      deltaRemainingDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
       if (deltaRemainingDays <= 0) {
         dateStatus = 'status--critical';
@@ -211,7 +245,7 @@ function computeAllServices(services, currentOdometer) {
     return {
       ...service,
       nextOdometer,
-      nextDueDate: nextDueDate ? nextDueDate.toISOString().split('T')[0] : null,
+      nextDueDate: nextDueDate ? formatLocalDate(nextDueDate) : null,
       deltaRemainingKm,
       deltaRemainingDays,
       displayDeltaText,
@@ -317,30 +351,43 @@ function computeServiceForecast(s, avgMileage) {
   const isKmOverdue = s.deltaRemainingKm !== null && s.deltaRemainingKm <= 0;
   const isTimeOverdue = s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  function makeResult(days, message, isOverdue, type) {
+    let forecastDate = null;
+    if (typeof days === 'number' && days > 0) {
+      const fDate = new Date(today);
+      fDate.setDate(fDate.getDate() + days);
+      forecastDate = formatLocalDate(fDate);
+    }
+    return { days, message, isOverdue, type, forecastDate };
+  }
+
   // 1. Overdue cases
   if (isKmOverdue && isTimeOverdue) {
-    return {
-      days: 0,
-      message: `🚨 Overdue by ${Math.abs(s.deltaRemainingKm)} KM & ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
-      isOverdue: true,
-      type: 'both'
-    };
+    return makeResult(
+      0,
+      `🚨 Overdue by ${Math.abs(s.deltaRemainingKm)} KM & ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
+      true,
+      'both'
+    );
   }
   if (isKmOverdue) {
-    return {
-      days: 0,
-      message: `🚨 Past due by ${Math.abs(s.deltaRemainingKm)} KM! Service immediately.`,
-      isOverdue: true,
-      type: 'km'
-    };
+    return makeResult(
+      0,
+      `🚨 Past due by ${Math.abs(s.deltaRemainingKm)} KM! Service immediately.`,
+      true,
+      'km'
+    );
   }
   if (isTimeOverdue) {
-    return {
-      days: 0,
-      message: `🚨 Past due by ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
-      isOverdue: true,
-      type: 'time'
-    };
+    return makeResult(
+      0,
+      `🚨 Past due by ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
+      true,
+      'time'
+    );
   }
 
   // 2. Not overdue - calculate estimated days remaining
@@ -353,47 +400,47 @@ function computeServiceForecast(s, avgMileage) {
 
   if (daysFromKm !== null && daysFromTime !== null) {
     if (daysFromKm <= daysFromTime) {
-      return {
-        days: daysFromKm,
-        message: `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day, based on mileage)`,
-        isOverdue: false,
-        type: 'km'
-      };
+      return makeResult(
+        daysFromKm,
+        `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day, based on mileage)`,
+        false,
+        'km'
+      );
     } else {
-      return {
-        days: daysFromTime,
-        message: `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate}, based on time)`,
-        isOverdue: false,
-        type: 'time'
-      };
+      return makeResult(
+        daysFromTime,
+        `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate}, based on time)`,
+        false,
+        'time'
+      );
     }
   }
 
   if (daysFromKm !== null) {
-    return {
-      days: daysFromKm,
-      message: `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day)`,
-      isOverdue: false,
-      type: 'km'
-    };
+    return makeResult(
+      daysFromKm,
+      `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day)`,
+      false,
+      'km'
+    );
   }
 
   if (daysFromTime !== null) {
-    return {
-      days: daysFromTime,
-      message: `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate})`,
-      isOverdue: false,
-      type: 'time'
-    };
+    return makeResult(
+      daysFromTime,
+      `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate})`,
+      false,
+      'time'
+    );
   }
 
   // KM only and no avgMileage available
-  return {
-    days: null,
-    message: `⏳ Forecast requires more odometer logs (~0 KM/day)`,
-    isOverdue: false,
-    type: 'none'
-  };
+  return makeResult(
+    null,
+    `⏳ Forecast requires more odometer logs (~0 KM/day)`,
+    false,
+    'none'
+  );
 }
 
 /**
@@ -498,3 +545,14 @@ function sortServices(services, criteria) {
     }
   });
 }
+
+// Global exports
+window.parseLocalDate = parseLocalDate;
+window.formatLocalDate = formatLocalDate;
+window.addTimeToDate = addTimeToDate;
+window.convertToDays = convertToDays;
+window.computeAllServices = computeAllServices;
+window.sortByPriority = sortByPriority;
+window.sortServices = sortServices;
+window.computeDailyAvgMileage = computeDailyAvgMileage;
+window.computeServiceForecast = computeServiceForecast;

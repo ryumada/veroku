@@ -620,36 +620,119 @@ body {
   margin-top: 14px;
 }
 
+/* Material Design 3 (M3) Expressive Accordion Cards */
+.accordion-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-lg);
+  background-color: var(--md-sys-color-surface-container-low);
+  transition: border-color var(--md-transition-standard), box-shadow var(--md-transition-standard), background-color var(--md-transition-standard);
+}
+
+.accordion-card:hover {
+  background-color: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-outline);
+}
+
+.accordion-card.expanded {
+  background-color: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.25);
+}
+
+.accordion-card.danger-zone-card.expanded {
+  border-color: var(--status-critical);
+  box-shadow: 0 6px 20px -4px rgba(248, 81, 73, 0.2);
+}
+
 .accordion-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 18px 22px;
   cursor: pointer;
   user-select: none;
+  background: transparent;
+  transition: background-color var(--md-transition-standard);
 }
+
+.accordion-header:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.accordion-card.expanded .accordion-header {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
 .accordion-title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
+
 .accordion-title {
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 700;
   color: var(--md-sys-color-on-surface);
 }
-.accordion-arrow {
-  font-size: 16px;
-  color: var(--md-sys-color-on-surface-variant);
-  transition: transform var(--md-transition-standard);
+
+.accordion-title.danger-title {
+  color: var(--status-critical);
 }
-.accordion-card.open .accordion-arrow {
-  transform: rotate(90deg);
+
+.accordion-arrow-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--md-shape-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: all var(--md-transition-standard);
+}
+
+.accordion-header:hover .accordion-arrow-wrap {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.accordion-chevron {
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1);
+  transform: rotate(0deg);
+}
+
+.accordion-card.expanded .accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--md-sys-color-primary);
+}
+
+.accordion-card.danger-zone-card.expanded .accordion-chevron {
+  color: var(--status-critical);
+}
+
+/* Smooth CSS Grid 0fr -> 1fr Height Expansion Animation */
+.accordion-collapse-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms cubic-bezier(0.2, 0, 0, 1), opacity 260ms ease;
+  opacity: 0;
+}
+
+.accordion-card.expanded .accordion-collapse-wrap {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.accordion-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .accordion-body {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding: 20px 22px;
+  margin-top: 0;
+  border-top: none;
 }
 
 .m3-divider {
@@ -983,9 +1066,14 @@ body {
 }
 
 .routine-card-btn .arrow {
-  font-size: 18px;
+  width: 20px;
+  height: 20px;
   color: var(--md-sys-color-on-surface-variant);
-  transition: transform var(--md-transition-standard);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--md-transition-standard);
 }
 .routine-card-btn:hover .arrow {
   color: var(--md-sys-color-primary);
@@ -1642,10 +1730,11 @@ body {
 }
 
 .checklist-item {
+  position: relative;
   background-color: var(--md-sys-color-surface-container-low);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-shape-lg);
-  padding: 14px 18px;
+  padding: 14px 44px 14px 18px;
   display: flex;
   align-items: flex-start;
   gap: 14px;
@@ -1705,11 +1794,13 @@ body {
   font-weight: 900;
 }
 
+.chk-details,
 .chk-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .chk-name {
@@ -1717,11 +1808,13 @@ body {
   font-weight: 600;
   color: var(--md-sys-color-on-surface);
   transition: color var(--md-transition-standard);
+  word-break: break-word;
 }
 .chk-desc {
   font-size: 13px;
   color: var(--md-sys-color-on-surface-variant);
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .chk-actions {
@@ -1729,18 +1822,30 @@ body {
   gap: 8px;
 }
 .btn-delete-chk {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   background: transparent;
   border: none;
   color: var(--md-sys-color-on-surface-variant);
   cursor: pointer;
-  padding: 8px 12px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--md-shape-full);
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   transition: all var(--md-transition-standard);
+  z-index: 2;
 }
 .btn-delete-chk:hover {
   background-color: var(--status-critical-container);
   color: var(--status-critical-on-container);
+  transform: scale(1.08);
+}
+.btn-delete-chk:active {
+  transform: scale(0.92);
 }
 
 /* ==========================================================================
@@ -1984,11 +2089,13 @@ tr:hover td {
 }
 
 /* Card View for Registered Components */
+.components-cards-view,
 .components-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+  margin-bottom: 20px;
 }
 
 .component-card {
@@ -1996,14 +2103,18 @@ tr:hover td {
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-shape-lg);
   padding: 16px 18px;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all var(--md-transition-standard);
 }
 .component-card:hover {
   background-color: var(--md-sys-color-surface-container);
   border-color: var(--md-sys-color-outline);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .component-card-header {
@@ -2650,6 +2761,14 @@ button[type="submit"]:active,
     min-width: 0;
     padding: 9px 40px 9px 14px;
     font-size: 13px;
+  }
+
+  .components-cards-view,
+  .components-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    margin-bottom: 18px;
   }
 
   .hud-card {

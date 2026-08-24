@@ -447,8 +447,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const service = activeVeh.services.find(s => s.id === serviceId);
         if (service) {
           // Open cost and notes confirmation modal
+          const todayStr = (window.formatLocalDate || formatLocalDate)(new Date());
           document.getElementById('log-service-id').value = serviceId;
           document.getElementById('log-service-name').value = service.name;
+          document.getElementById('log-service-date').value = todayStr;
           document.getElementById('log-service-cost').value = '';
           document.getElementById('log-service-notes').value = '';
           openModal('modal-service-log');
@@ -774,8 +776,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeVeh = getActiveVehicle(state);
       const service = activeVeh.services.find(s => s.id === serviceId);
       if (service) {
+        const todayStr = (window.formatLocalDate || formatLocalDate)(new Date());
         document.getElementById('log-service-id').value = serviceId;
         document.getElementById('log-service-name').value = service.name;
+        document.getElementById('log-service-date').value = todayStr;
         document.getElementById('log-service-cost').value = '';
         document.getElementById('log-service-notes').value = '';
         openModal('modal-service-log');
@@ -790,15 +794,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const accordionCard = document.getElementById('accordion-data-mgmt');
   if (accordionHeader && accordionCard) {
     accordionHeader.addEventListener('click', () => {
-      const body = accordionCard.querySelector('.accordion-body');
-      const isExpanded = accordionCard.classList.contains('expanded');
-
-      if (isExpanded) {
-        accordionCard.classList.remove('expanded');
-        body?.setAttribute('hidden', 'true');
-      } else {
-        accordionCard.classList.add('expanded');
-        body?.removeAttribute('hidden');
+      const isExpanded = accordionCard.classList.toggle('expanded');
+      accordionHeader.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    });
+    accordionHeader.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const isExpanded = accordionCard.classList.toggle('expanded');
+        accordionHeader.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       }
     });
   }
@@ -1021,15 +1024,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const dangerAccordionCard = document.getElementById('accordion-danger-zone');
   if (dangerAccordionHeader && dangerAccordionCard) {
     dangerAccordionHeader.addEventListener('click', () => {
-      const body = dangerAccordionCard.querySelector('.accordion-body');
-      const isExpanded = dangerAccordionCard.classList.contains('expanded');
-
-      if (isExpanded) {
-        dangerAccordionCard.classList.remove('expanded');
-        body?.setAttribute('hidden', 'true');
-      } else {
-        dangerAccordionCard.classList.add('expanded');
-        body?.removeAttribute('hidden');
+      const isExpanded = dangerAccordionCard.classList.toggle('expanded');
+      dangerAccordionHeader.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    });
+    dangerAccordionHeader.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const isExpanded = dangerAccordionCard.classList.toggle('expanded');
+        dangerAccordionHeader.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       }
     });
   }
@@ -1141,6 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formServiceLog.addEventListener('submit', (e) => {
       e.preventDefault();
       const serviceId = document.getElementById('log-service-id').value;
+      const serviceDate = document.getElementById('log-service-date').value;
       const cost = document.getElementById('log-service-cost').value;
       const notes = document.getElementById('log-service-notes').value.trim();
 
@@ -1149,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      markServiceDone(serviceId, Number(cost), notes);
+      markServiceDone(serviceId, Number(cost), notes, serviceDate);
 
       // Reload state
       state = getAppState();

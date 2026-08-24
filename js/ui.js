@@ -237,6 +237,9 @@ function renderServiceCards(enrichedServices, activeVeh) {
       if (s.one_time_limit_date) {
         nextExpectedText += ' <span style="color: var(--status-warning);">[Override]</span>';
       }
+    } else if (forecast && forecast.forecastDate) {
+      if (nextExpectedText) nextExpectedText += ' / ';
+      nextExpectedText += `<span style="opacity: 0.85;">Est. ${forecast.forecastDate}</span>`;
     }
     if (!nextExpectedText) nextExpectedText = '-';
 
@@ -249,13 +252,14 @@ function renderServiceCards(enrichedServices, activeVeh) {
 
     let timePercent = 0;
     if (s.interval_time_val && s.last_service_date) {
-      const lastDate = new Date(s.last_service_date);
-      if (!isNaN(lastDate.getTime())) {
-        const elapsedDays = Math.max(0, (new Date() - lastDate) / (1000 * 60 * 60 * 24));
-        const totalDays = convertToDays(s.interval_time_val, s.interval_time_unit);
-        if (totalDays > 0) {
-          timePercent = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
-        }
+      const parseFunc = window.parseLocalDate || parseLocalDate;
+      const lastDate = parseFunc(s.last_service_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const elapsedDays = Math.max(0, Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const totalDays = convertToDays(s.interval_time_val, s.interval_time_unit);
+      if (totalDays > 0) {
+        timePercent = Math.min(100, Math.max(0, Math.round((elapsedDays / totalDays) * 100)));
       }
     }
 
@@ -283,18 +287,24 @@ function renderServiceCards(enrichedServices, activeVeh) {
           </div>
           <div class="gauge-info">
             <span class="gauge-title">Mileage Wear</span>
-            <span class="gauge-val">${s.interval_km} KM</span>
+            <span class="gauge-val">Due: ${s.nextOdometer !== null ? `${s.nextOdometer} KM` : `${s.interval_km} KM`}</span>
             ${kmSub ? `<span class="gauge-sub">${kmSub}</span>` : ''}
           </div>
         </div>
       `;
     }
 
-    if (s.interval_time_val) {
+    if (s.interval_time_val || (forecast && forecast.days !== null)) {
+      const isExplicitTime = !!s.interval_time_val;
+      const targetDateStr = s.nextDueDate || (forecast ? forecast.forecastDate : null);
+      const daysRemaining = isExplicitTime ? s.deltaRemainingDays : (forecast ? forecast.days : null);
       const safeTimePercent = Math.min(100, Math.max(0, timePercent));
       const timeOffset = circ - (safeTimePercent / 100) * circ;
-      const timeStatusClass = (s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0) ? 'status--critical' : (timePercent >= 80 ? 'status--warning' : 'status--optimal');
-      const timeSub = s.deltaRemainingDays !== null ? (s.deltaRemainingDays < 0 ? `${Math.abs(s.deltaRemainingDays)}d overdue` : `${s.deltaRemainingDays}d left`) : '';
+      const isOverdue = daysRemaining !== null && daysRemaining <= 0;
+      const timeStatusClass = isOverdue ? 'status--critical' : (safeTimePercent >= 80 ? 'status--warning' : 'status--optimal');
+      const timeSub = daysRemaining !== null ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`) : '';
+      const gaugeTitle = isExplicitTime ? 'Time Wear' : 'Est. Time Wear';
+      const gaugeVal = targetDateStr ? `Due: ${targetDateStr}` : (isExplicitTime ? `${s.interval_time_val} ${s.interval_time_unit}` : 'Calculating...');
 
       gaugesHtml += `
         <div class="tracker-gauge-item ${timeStatusClass}">
@@ -308,8 +318,8 @@ function renderServiceCards(enrichedServices, activeVeh) {
             <span class="gauge-center-text">${safeTimePercent}%</span>
           </div>
           <div class="gauge-info">
-            <span class="gauge-title">Time Wear</span>
-            <span class="gauge-val">${s.interval_time_val} ${s.interval_time_unit}</span>
+            <span class="gauge-title">${gaugeTitle}</span>
+            <span class="gauge-val">${gaugeVal}</span>
             ${timeSub ? `<span class="gauge-sub">${timeSub}</span>` : ''}
           </div>
         </div>
@@ -441,7 +451,9 @@ function renderServiceTable(state) {
   }
 
   // Active odometer to compute dynamic status for config list view
+  const activeVeh = (typeof getActiveVehicle === 'function') ? getActiveVehicle(state) : state;
   const currentOdo = state.meta?.current_odometer || 0;
+  const avgMileage = computeDailyAvgMileage(activeVeh ? activeVeh.odometer_log : []);
   const enriched = computeAllServices(services, currentOdo);
 
   // Search filtering
@@ -502,6 +514,7 @@ function renderServiceTable(state) {
     }
 
     // Formatting Next Expected
+    const itemForecast = computeServiceForecast(s, avgMileage);
     let nextExpectedText = '';
     if (s.nextOdometer !== null) {
       nextExpectedText += `${s.nextOdometer} KM`;
@@ -515,6 +528,9 @@ function renderServiceTable(state) {
       if (s.one_time_limit_date) {
         nextExpectedText += ` <span style="color: var(--status-warning);" title="One-time Date Override">*</span>`;
       }
+    } else if (itemForecast && itemForecast.forecastDate) {
+      if (nextExpectedText) nextExpectedText += '<br>';
+      nextExpectedText += `<span class="lbl-desc" style="font-style: italic;">Est. ${itemForecast.forecastDate}</span>`;
     }
     if (!nextExpectedText) nextExpectedText = '-';
 
@@ -578,7 +594,7 @@ function renderServiceTable(state) {
           </div>
           <div class="component-card-row">
             <span class="lbl">Next Expected</span>
-            <span class="val">${s.nextOdometer !== null ? s.nextOdometer + ' KM' : ''} ${s.one_time_limit_km ? '[*]' : ''} ${s.nextDueDate ? `/ ${s.nextDueDate}` : ''} ${s.one_time_limit_date ? '[*]' : ''}</span>
+            <span class="val">${s.nextOdometer !== null ? s.nextOdometer + ' KM' : ''} ${s.one_time_limit_km ? '[*]' : ''} ${s.nextDueDate ? `/ ${s.nextDueDate}` : (itemForecast && itemForecast.forecastDate ? `/ Est. ${itemForecast.forecastDate}` : '')} ${s.one_time_limit_date ? '[*]' : ''}</span>
           </div>
         </div>
       </div>
@@ -685,7 +701,11 @@ function generateChecklistHTML(items, type) {
           <div class="chk-name" data-id="${item.id}">${item.task}</div>
           ${item.desc ? `<div class="chk-desc" data-desc-id="${item.id}">${parsedDesc}</div>` : ''}
         </div>
-        <button class="btn-delete-chk" data-type="${type}" data-id="${item.id}" title="Remove Task">&times;</button>
+        <button type="button" class="btn-delete-chk" data-type="${type}" data-id="${item.id}" title="Remove Task">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
       </div>
     `;
   }).join('');

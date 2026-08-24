@@ -306,18 +306,22 @@ function importData(file) {
 }
 
 /**
- * Mark a service as completed, updating its last_service_odometer to current odometer.
+ * Mark a service component as completed/serviced, updating its last serviced odometer and date.
  * @param {string} serviceId
  * @param {number} cost
- * @param {string} notes
+ * @param {string} [notes]
+ * @param {string} [serviceDate]
  */
-function markServiceDone(serviceId, cost, notes) {
+function markServiceDone(serviceId, cost, notes, serviceDate) {
   const state = getAppState();
   const vehicle = getActiveVehicle(state);
   const service = vehicle.services.find(s => s.id === serviceId);
   if (service) {
+    const todayStr = window.formatLocalDate ? window.formatLocalDate(new Date()) : new Date().toISOString().split('T')[0];
+    const finalDate = serviceDate || todayStr;
+
     service.last_service_odometer = vehicle.meta.current_odometer;
-    service.last_service_date = new Date().toISOString().split('T')[0];
+    service.last_service_date = finalDate;
 
     // Clear one-time overrides
     service.one_time_limit_km = null;
@@ -331,6 +335,7 @@ function markServiceDone(serviceId, cost, notes) {
       service_id: serviceId,
       service_name: service.name,
       odometer_at_service: vehicle.meta.current_odometer,
+      service_date: finalDate,
       cost: Number(cost) || 0,
       timestamp: Date.now(),
       notes: notes || ''

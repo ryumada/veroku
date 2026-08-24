@@ -36,7 +36,8 @@ function createDefaultVehicleProfile(id = 'v-1', name = 'My Vehicle', icon = 'ðŸ
       monthly: []
     },
     service_history: [],
-    odometer_log: odometerLog
+    odometer_log: odometerLog,
+    fuel_log: []
   };
 }
 
@@ -52,9 +53,18 @@ const DEFAULT_STATE = {
       daily: { enabled: false, time: '08:00' },
       weekly: { enabled: false, day: 0, time: '09:00' },
       monthly: { enabled: false, date: 1, time: '10:00' }
-    }
+    },
+    fuel_types: []
   }
 };
+
+const EXAMPLE_FUEL_TYPES = [
+  { id: 'ft-1', name: 'Pertalite', price: 10000 },
+  { id: 'ft-2', name: 'Pertamax', price: 12950 },
+  { id: 'ft-3', name: 'Pertamax Turbo', price: 14400 },
+  { id: 'ft-4', name: 'Shell Super', price: 13500 },
+  { id: 'ft-5', name: 'Shell V-Power', price: 14500 }
+];
 
 /**
  * Generate a random UUID-like unique identifier.
@@ -176,7 +186,10 @@ function getAppState() {
             date: parsed.settings?.reminders?.monthly?.date ?? DEFAULT_STATE.settings.reminders.monthly.date,
             time: parsed.settings?.reminders?.monthly?.time || DEFAULT_STATE.settings.reminders.monthly.time
           }
-        }
+        },
+        fuel_types: Array.isArray(parsed.settings?.fuel_types)
+          ? parsed.settings.fuel_types
+          : []
       }
     };
 
@@ -470,7 +483,122 @@ function markServiceDone(serviceId, cost, notes, serviceDate) {
   }
 }
 
+/**
+ * Add a new fuel log entry to the active vehicle.
+ * @param {object} fuelData
+ * @param {number} fuelData.odometer
+ * @param {string} fuelData.fuel_type
+ * @param {number} fuelData.price_per_liter
+ * @param {number} fuelData.liters
+ * @param {number} fuelData.total_cost
+ * @param {boolean} fuelData.is_full_tank
+ * @param {string} [fuelData.date]
+ * @param {string} [fuelData.notes]
+ */
+function addFuelLog(fuelData) {
+  const state = getAppState();
+  const vehicle = getActiveVehicle(state);
+  if (!vehicle) return;
+
+  if (!Array.isArray(vehicle.fuel_log)) {
+    vehicle.fuel_log = [];
+  }
+
+  const todayStr = window.formatLocalDate ? window.formatLocalDate(new Date()) : new Date().toISOString().split('T')[0];
+  const finalDate = fuelData.date || todayStr;
+  const odo = Number(fuelData.odometer) || 0;
+
+  const entry = {
+    id: generateId('fl'),
+    timestamp: Date.now(),
+    date: finalDate,
+    odometer: odo,
+    fuel_type: fuelData.fuel_type || 'Pertalite',
+    price_per_liter: Number(fuelData.price_per_liter) || 0,
+    liters: Number(fuelData.liters) || 0,
+    total_cost: Number(fuelData.total_cost) || 0,
+    is_full_tank: Boolean(fuelData.is_full_tank),
+    notes: fuelData.notes || ''
+  };
+
+  vehicle.fuel_log.push(entry);
+
+  // If refuel odometer is higher than current, update vehicle odometer and log it
+  if (odo > (vehicle.meta.current_odometer || 0)) {
+    vehicle.meta.current_odometer = odo;
+    vehicle.meta.last_updated_timestamp = Date.now();
+    if (!Array.isArray(vehicle.odometer_log)) {
+      vehicle.odometer_log = [];
+    }
+    vehicle.odometer_log.push({
+      odometer: odo,
+      timestamp: Date.now(),
+      notes: `Refuel: ${entry.fuel_type} (${entry.liters} L)`
+    });
+  }
+
+  saveAppState(state);
+  return entry;
+}
+
+/**
+ * Delete a fuel log entry by ID.
+ * @param {string} fuelLogId
+ */
+function deleteFuelLog(fuelLogId) {
+  const state = getAppState();
+  const vehicle = getActiveVehicle(state);
+  if (!vehicle || !Array.isArray(vehicle.fuel_log)) return false;
+
+  const idx = vehicle.fuel_log.findIndex(f => f.id === fuelLogId);
+  if (idx !== -1) {
+    vehicle.fuel_log.splice(idx, 1);
+    saveAppState(state);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Update an existing fuel log entry by ID.
+ * @param {string} fuelLogId
+ * @param {object} updatedData
+ */
+function updateFuelLog(fuelLogId, updatedData) {
+  const state = getAppState();
+  const vehicle = getActiveVehicle(state);
+  if (!vehicle || !Array.isArray(vehicle.fuel_log)) return false;
+
+  const idx = vehicle.fuel_log.findIndex(f => f.id === fuelLogId);
+  if (idx === -1) return false;
+
+  const odo = Number(updatedData.odometer) || 0;
+  vehicle.fuel_log[idx] = {
+    ...vehicle.fuel_log[idx],
+    date: updatedData.date || vehicle.fuel_log[idx].date,
+    odometer: odo,
+    fuel_type: updatedData.fuel_type || vehicle.fuel_log[idx].fuel_type,
+    price_per_liter: Number(updatedData.price_per_liter) || 0,
+    liters: Number(updatedData.liters) || 0,
+    total_cost: Number(updatedData.total_cost) || 0,
+    is_full_tank: Boolean(updatedData.is_full_tank),
+    notes: updatedData.notes || ''
+  };
+
+  if (odo > (vehicle.meta.current_odometer || 0)) {
+    vehicle.meta.current_odometer = odo;
+    vehicle.meta.last_updated_timestamp = Date.now();
+  }
+
+  saveAppState(state);
+  return vehicle.fuel_log[idx];
+}
+
 // Window exports
 window.getAutoSnapshots = getAutoSnapshots;
 window.restoreAutoSnapshot = restoreAutoSnapshot;
 window.shareData = shareData;
+window.addFuelLog = addFuelLog;
+window.updateFuelLog = updateFuelLog;
+window.deleteFuelLog = deleteFuelLog;
+window.EXAMPLE_FUEL_TYPES = EXAMPLE_FUEL_TYPES;

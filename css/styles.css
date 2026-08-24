@@ -3247,3 +3247,259 @@ button[type="submit"]:active,
   border-radius: var(--md-shape-md);
   border: 1px dashed var(--md-sys-color-outline-variant);
 }
+
+/* ==========================================================================
+   FUEL LOG & KM/L EFFICIENCY STYLES
+   ========================================================================== */
+.fuel-hud-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  padding: 6px 14px;
+  border-radius: var(--md-shape-full);
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.fuel-km-val {
+  color: var(--status-optimal);
+}
+
+.fuel-cost-val {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.hud-form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-hud-refuel {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: var(--md-shape-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--md-transition-standard);
+  white-space: nowrap;
+}
+.btn-hud-refuel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn-hud-refuel:active {
+  transform: scale(0.96);
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fuel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fuel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fuel-type-badge {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-primary);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--md-shape-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.fuel-cost-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fuel-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit-fuel,
+.btn-delete-fuel {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--md-transition-standard);
+}
+.btn-edit-fuel:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-primary);
+}
+.btn-delete-fuel:hover {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: var(--status-critical);
+}
+
+.fuel-item-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.fuel-efficiency-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fuel-eff-tag {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--md-shape-full);
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.fuel-eff-tag.optimal {
+  background-color: rgba(35, 134, 54, 0.15);
+  color: var(--status-optimal);
+  border-color: rgba(35, 134, 54, 0.3);
+}
+
+.fuel-eff-tag.partial {
+  opacity: 0.8;
+}
+
+.fuel-cost-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Dynamic Fuel Types Editor in Settings */
+.fuel-types-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.fuel-type-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 36px;
+  gap: 10px;
+  align-items: flex-end;
+  background-color: var(--md-sys-color-surface-container-low);
+  padding: 10px 12px;
+  border-radius: var(--md-shape-md);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  transition: all var(--md-transition-standard);
+}
+.fuel-type-editor-row:focus-within {
+  border-color: var(--md-sys-color-primary);
+}
+
+.fuel-type-col-name,
+.fuel-type-col-price {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fuel-type-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.fuel-type-name-input,
+.fuel-type-price-input {
+  padding: 8px 10px;
+  border-radius: var(--md-shape-sm);
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+.fuel-type-name-input:focus,
+.fuel-type-price-input:focus {
+  border-color: var(--md-sys-color-primary);
+}
+
+.btn-remove-fuel-type {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  padding: 8px;
+  height: 36px;
+  border-radius: var(--md-shape-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--md-transition-standard);
+}
+.btn-remove-fuel-type:hover {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: var(--status-critical);
+}
+
+.fuel-types-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.fuel-types-empty-state {
+  font-size: 12.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  background-color: var(--md-sys-color-surface-container-low);
+  padding: 14px 16px;
+  border-radius: var(--md-shape-md);
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  line-height: 1.5;
+}
+
+@media (max-width: 500px) {
+  .fuel-type-editor-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}

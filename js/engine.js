@@ -579,6 +579,89 @@ function sortServices(services, criteria) {
   });
 }
 
+/**
+ * Compute fuel consumption statistics from refuel history using full-to-full intervals.
+ * @param {Array<object>} fuelLog
+ * @returns {{
+ *   avgKmL: number|null,
+ *   lastKmL: number|null,
+ *   costPerKm: number|null,
+ *   totalLiters: number,
+ *   totalCost: number,
+ *   enrichedLog: Array<object>
+ * }}
+ */
+function computeFuelEfficiency(fuelLog) {
+  const result = {
+    avgKmL: null,
+    lastKmL: null,
+    costPerKm: null,
+    totalLiters: 0,
+    totalCost: 0,
+    enrichedLog: []
+  };
+
+  if (!Array.isArray(fuelLog) || fuelLog.length === 0) {
+    return result;
+  }
+
+  // Sort by odometer ascending
+  const sorted = [...fuelLog].sort((a, b) => (a.odometer || 0) - (b.odometer || 0));
+
+  let totalCalculatedKm = 0;
+  let totalCalculatedLiters = 0;
+  let totalCalculatedCost = 0;
+
+  let lastFullOdo = null;
+  let intermediateLiters = 0;
+  let intermediateCost = 0;
+
+  const enriched = sorted.map((entry) => {
+    const item = { ...entry, segmentKm: null, segmentKmL: null, segmentCostPerKm: null };
+    result.totalLiters += Number(entry.liters) || 0;
+    result.totalCost += Number(entry.total_cost) || 0;
+
+    if (lastFullOdo === null) {
+      if (entry.is_full_tank) {
+        lastFullOdo = entry.odometer;
+      }
+    } else {
+      intermediateLiters += Number(entry.liters) || 0;
+      intermediateCost += Number(entry.total_cost) || 0;
+
+      if (entry.is_full_tank) {
+        const deltaKm = entry.odometer - lastFullOdo;
+        if (deltaKm > 0 && intermediateLiters > 0) {
+          const kmL = deltaKm / intermediateLiters;
+          const costKm = intermediateCost / deltaKm;
+
+          item.segmentKm = deltaKm;
+          item.segmentKmL = Math.round(kmL * 10) / 10;
+          item.segmentCostPerKm = Math.round(costKm);
+
+          totalCalculatedKm += deltaKm;
+          totalCalculatedLiters += intermediateLiters;
+          totalCalculatedCost += intermediateCost;
+
+          result.lastKmL = item.segmentKmL;
+        }
+        lastFullOdo = entry.odometer;
+        intermediateLiters = 0;
+        intermediateCost = 0;
+      }
+    }
+    return item;
+  });
+
+  if (totalCalculatedKm > 0 && totalCalculatedLiters > 0) {
+    result.avgKmL = Math.round((totalCalculatedKm / totalCalculatedLiters) * 10) / 10;
+    result.costPerKm = Math.round(totalCalculatedCost / totalCalculatedKm);
+  }
+
+  result.enrichedLog = enriched.reverse();
+  return result;
+}
+
 // Global exports
 window.parseLocalDate = parseLocalDate;
 window.formatLocalDate = formatLocalDate;
@@ -590,3 +673,4 @@ window.sortServices = sortServices;
 window.computeDailyAvgMileage = computeDailyAvgMileage;
 window.computeServiceForecast = computeServiceForecast;
 window.computeMonthlySpendTrends = computeMonthlySpendTrends;
+window.computeFuelEfficiency = computeFuelEfficiency;

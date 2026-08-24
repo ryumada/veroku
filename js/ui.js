@@ -118,6 +118,18 @@ function renderOdometerHUD(state) {
   const streak = activeVeh.meta.streak_days || 0;
   const streakHtml = streak > 0 ? `<div class="streak-badge">🔥 ${streak} Day Streak</div>` : '';
 
+  // Calculate fuel efficiency stats
+  const fuelStats = typeof computeFuelEfficiency === 'function' ? computeFuelEfficiency(activeVeh.fuel_log || []) : null;
+  let fuelBadgeHtml = '';
+  if (fuelStats && fuelStats.avgKmL !== null) {
+    fuelBadgeHtml = `
+      <div class="fuel-hud-badge" title="Average full-to-full fuel efficiency">
+        ⛽ <span class="fuel-km-val">${fuelStats.avgKmL} KM/L</span>
+        ${fuelStats.costPerKm ? `<span class="fuel-cost-val">• Rp ${fuelStats.costPerKm.toLocaleString()}/KM</span>` : ''}
+      </div>
+    `;
+  }
+
   const chartHtml = `
     <div class="mileage-chart-container">
       <div class="mileage-chart-title-bar">
@@ -141,13 +153,19 @@ function renderOdometerHUD(state) {
       </div>
       <div class="hud-timestamp">Last Synced: ${timeString}</div>
       ${streakHtml}
+      ${fuelBadgeHtml}
     </div>
     <div class="hud-input-panel">
       <label for="input-hud-odo">Update Log Reading (KM)</label>
-      <form id="form-odometer" class="hud-form">
-        <input type="number" id="input-hud-odo" min="${currentOdo}" value="${currentOdo}" required placeholder="${currentOdo}">
-        <button type="submit" title="Submit new Odometer reading">LOG</button>
-      </form>
+      <div class="hud-form-row">
+        <form id="form-odometer" class="hud-form">
+          <input type="number" id="input-hud-odo" min="${currentOdo}" value="${currentOdo}" required placeholder="${currentOdo}">
+          <button type="submit" title="Submit new Odometer reading">LOG</button>
+        </form>
+        <button type="button" class="btn-hud-refuel" id="btn-hud-log-fuel" title="Log Fuel Refuel">
+          <span>⛽</span> Log Fuel
+        </button>
+      </div>
       <div class="quick-odo-chips">
         <span class="quick-chip-label">Quick Add:</span>
         <button type="button" class="chip-odo-quick" data-add="10">+10</button>
@@ -988,6 +1006,9 @@ function renderSettings(state) {
   const toastDuration = document.getElementById('setting-toast-duration');
   if (toastDuration) toastDuration.value = state.settings?.toast_duration !== undefined ? state.settings.toast_duration : 5;
 
+  // Render dynamic fuel types editor
+  renderFuelTypesEditor(state.settings?.fuel_types);
+
   // Toggle Load Example Data card visibility based on active vehicle profile state
   const activeVeh = getActiveVehicle(state);
   const exampleCard = document.getElementById('card-example-data');
@@ -1053,6 +1074,8 @@ function renderAll(state) {
   // Render cost summary and history logs
   renderCostSummary(activeVeh, window.costFilterMode || 'yearly', window.costActiveDate || new Date());
   renderServiceHistory(activeVeh, window.historyFilterMode || 'monthly', window.historyActiveDate || new Date());
+  renderFuelHistory(activeVeh);
+  populateFuelTypeDropdown(state.settings?.fuel_types);
 }
 
 /**
@@ -1606,6 +1629,134 @@ function renderServiceHistory(activeVeh, filterMode, activeDate) {
   }).join('');
 }
 
+/**
+ * Render the list of fuel refuel logs inside View B.
+ * @param {object} activeVeh
+ */
+function renderFuelHistory(activeVeh) {
+  const container = document.getElementById('fuel-history-list');
+  if (!container) return;
+
+  const fuelLog = activeVeh && Array.isArray(activeVeh.fuel_log) ? activeVeh.fuel_log : [];
+  if (fuelLog.length === 0) {
+    container.innerHTML = `<div class="history-item">No refuel logs recorded yet. Tap "Log Refuel" to record gas fill-ups and compute KM/L efficiency.</div>`;
+    return;
+  }
+
+  const fuelStats = typeof computeFuelEfficiency === 'function' ? computeFuelEfficiency(fuelLog) : { enrichedLog: fuelLog };
+  const enriched = fuelStats.enrichedLog || fuelLog;
+
+  container.innerHTML = enriched.map(item => {
+    const dateStr = item.date || new Date(item.timestamp).toISOString().split('T')[0];
+    const efficiencyHtml = item.segmentKmL !== null
+      ? `<span class="fuel-eff-tag optimal">⚡ ${item.segmentKmL} KM/L</span>`
+      : (item.is_full_tank ? `<span class="fuel-eff-tag">🏁 Full Tank</span>` : `<span class="fuel-eff-tag partial">Partial Tank</span>`);
+
+    const costPerKmHtml = item.segmentCostPerKm !== null
+      ? `<span class="fuel-cost-tag">Rp ${item.segmentCostPerKm.toLocaleString()}/KM</span>`
+      : '';
+
+    const notesHtml = item.notes ? `<div class="history-item-notes">${item.notes}</div>` : '';
+
+    return `
+      <div class="history-item fuel-item" data-id="${item.id}">
+        <div class="history-item-header">
+          <div class="fuel-title-wrap">
+            <span class="fuel-type-badge">${item.fuel_type}</span>
+            <span class="history-item-date">${dateStr}</span>
+          </div>
+          <div class="fuel-cost-header">
+            <span class="history-item-cost">${item.total_cost.toLocaleString()} IDR</span>
+            <div class="fuel-card-actions">
+              <button type="button" class="btn-edit-fuel" data-id="${item.id}" title="Edit refuel record">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+              <button type="button" class="btn-delete-fuel" data-id="${item.id}" title="Delete fuel log">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="fuel-item-details">
+          <span>📊 ${item.liters} L @ Rp ${item.price_per_liter.toLocaleString()}</span>
+          <span class="history-item-odo">${item.odometer.toLocaleString()} KM</span>
+        </div>
+        <div class="fuel-efficiency-row">
+          ${efficiencyHtml}
+          ${costPerKmHtml}
+        </div>
+        ${notesHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Render the dynamic list of fuel types in Settings.
+ * @param {Array<object>} fuelTypes
+ */
+function renderFuelTypesEditor(fuelTypes) {
+  const container = document.getElementById('fuel-types-list');
+  if (!container) return;
+
+  const list = Array.isArray(fuelTypes) ? fuelTypes : [];
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="fuel-types-empty-state">
+        No custom fuel types added yet. Tap <strong>"+ Add Fuel Type"</strong> to add your own, or <strong>"⚡ Load Example Presets"</strong> to load Indonesian standard fuels (Pertalite, Pertamax, Shell, etc.).
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map((item, idx) => `
+    <div class="fuel-type-editor-row" data-index="${idx}">
+      <div class="fuel-type-col-name">
+        <label class="fuel-type-label">Fuel Name</label>
+        <input type="text" class="fuel-type-name-input" value="${item.name || ''}" placeholder="e.g., Pertamax" required>
+      </div>
+      <div class="fuel-type-col-price">
+        <label class="fuel-type-label">Price / Liter (IDR)</label>
+        <input type="number" class="fuel-type-price-input" min="0" value="${item.price || 0}" placeholder="10000" required>
+      </div>
+      <button type="button" class="btn-remove-fuel-type" title="Remove fuel type">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+/**
+ * Populate the fuel type dropdown options using dynamic fuel types array.
+ * @param {Array<object>} [fuelTypes]
+ */
+function populateFuelTypeDropdown(fuelTypes) {
+  const select = document.getElementById('fuel-log-type');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const list = Array.isArray(fuelTypes) ? fuelTypes : [];
+  const customOptionHtml = '<option value="Custom" data-price="">Custom Fuel / Price</option>';
+
+  if (list.length === 0) {
+    select.innerHTML = customOptionHtml;
+  } else {
+    select.innerHTML = list.map(item => `
+      <option value="${item.name}" data-price="${item.price}">${item.name} (Rp ${Number(item.price).toLocaleString()} / L)</option>
+    `).join('') + customOptionHtml;
+  }
+
+  if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+    select.value = currentVal;
+  }
+}
+
 // Assign helpers to global object for DOM actions and app.js access
 window.renderAll = renderAll;
 window.showToast = showToast;
@@ -1623,6 +1774,9 @@ window.populateOdometerHistoryModal = populateOdometerHistoryModal;
 window.renderVehicleSelector = renderVehicleSelector;
 window.renderCostSummary = renderCostSummary;
 window.renderServiceHistory = renderServiceHistory;
+window.renderFuelHistory = renderFuelHistory;
+window.renderFuelTypesEditor = renderFuelTypesEditor;
+window.populateFuelTypeDropdown = populateFuelTypeDropdown;
 window.updateComponentsViewVisibility = updateComponentsViewVisibility;
 window.showCustomConfirmModal = showCustomConfirmModal;
 window.handleCustomConfirmAction = handleCustomConfirmAction;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'veroku-cache-v51';
+const CACHE_NAME = 'veroku-cache-v56';
 const ASSETS = [
   './',
   './index.html',

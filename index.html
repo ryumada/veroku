@@ -382,6 +382,26 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             </div>
           </div>
 
+          <!-- Refuel & Fuel Economy Log Card -->
+          <div class="card fuel-history-card">
+            <div class="service-history-header-wrap">
+              <div>
+                <h3>⛽ Refuel History &amp; Fuel Economy</h3>
+                <p class="form-desc">Full-to-full KM/L fuel consumption and refuel records.</p>
+              </div>
+              <div class="history-quick-actions">
+                <button type="button" class="action-btn submit-btn" id="btn-open-fuel-log-view-b">
+                  <span>⛽</span> Log Refuel
+                </button>
+              </div>
+            </div>
+            <div class="scrollable-y">
+              <div id="fuel-history-list" class="history-timeline-list">
+                <!-- Dynamically populated fuel history list -->
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -597,6 +617,28 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                     <option value="0">Never (Click to dismiss)</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Fuel Types & Price Presets Card -->
+            <div class="card settings-card">
+              <div class="settings-card-header">
+                <span class="checklist-badge daily">FUEL</span>
+                <h3>Fuel Types &amp; Price Presets</h3>
+              </div>
+              <p class="settings-card-description">Configure your available fuel types and default price per liter.</p>
+              
+              <div id="fuel-types-list" class="fuel-types-editor-list">
+                <!-- Dynamically rendered fuel type rows -->
+              </div>
+              
+              <div class="fuel-types-actions-row">
+                <button type="button" class="action-btn outline-btn" id="btn-add-fuel-type">
+                  <span>+</span> Add Fuel Type
+                </button>
+                <button type="button" class="action-btn outline-btn" id="btn-load-example-fuel-types" title="Load standard Indonesian fuel price presets">
+                  <span>⚡</span> Load Example Presets
+                </button>
               </div>
             </div>
 
@@ -970,6 +1012,67 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         <button type="button" class="action-btn outline-btn" id="btn-cancel-delete">Cancel</button>
         <button type="button" class="action-btn danger-btn" id="btn-confirm-delete" disabled>Wipe Data</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Log Refuel Modal -->
+  <div id="modal-log-fuel" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-log-fuel-title">⛽ Log Fuel Refuel</h3>
+        <button type="button" class="modal-close" id="btn-close-log-fuel">&times;</button>
+      </div>
+      <form id="form-log-fuel">
+        <input type="hidden" id="fuel-log-edit-id">
+        <div class="form-group">
+          <label for="fuel-log-date">Refuel Date <span class="required-asterisk">*</span></label>
+          <input type="date" id="fuel-log-date" required>
+        </div>
+        <div class="form-group">
+          <label for="fuel-log-odometer">Current Odometer (KM) <span class="required-asterisk">*</span></label>
+          <input type="number" id="fuel-log-odometer" required min="0" placeholder="e.g. 10250">
+        </div>
+        <div class="form-group">
+          <label for="fuel-log-type">Fuel Type</label>
+          <select id="fuel-log-type">
+            <option value="Pertalite" data-price="10000">Pertalite (Rp 10,000 / L)</option>
+            <option value="Pertamax" data-price="12950">Pertamax (Rp 12,950 / L)</option>
+            <option value="Pertamax Turbo" data-price="14400">Pertamax Turbo (Rp 14,400 / L)</option>
+            <option value="Shell Super" data-price="13500">Shell Super (Rp 13,500 / L)</option>
+            <option value="Shell V-Power" data-price="14500">Shell V-Power (Rp 14,500 / L)</option>
+            <option value="Custom" data-price="">Custom Fuel / Price</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fuel-log-price">Price Per Liter (IDR) <span class="required-asterisk">*</span></label>
+          <input type="number" id="fuel-log-price" required min="1" value="10000" placeholder="10000">
+        </div>
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label for="fuel-log-cost">Total Cost (IDR) <span class="required-asterisk">*</span></label>
+            <input type="number" id="fuel-log-cost" required min="0" placeholder="e.g. 50000">
+          </div>
+          <div class="form-group">
+            <label for="fuel-log-liters">Volume (Liters) <span class="required-asterisk">*</span></label>
+            <input type="number" id="fuel-log-liters" step="0.01" required min="0.01" placeholder="e.g. 5.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="switch-container">
+            <input type="checkbox" id="fuel-log-full-tank" checked>
+            <span class="switch-slider"></span>
+            <span class="switch-label">Filled to Full Tank (Enables KM/L calculation)</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="fuel-log-notes">Refuel Notes</label>
+          <input type="text" id="fuel-log-notes" placeholder="e.g., SPBU 34-12345, Shell Diponegoro">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn outline-btn" id="btn-cancel-log-fuel">Cancel</button>
+          <button type="submit" class="action-btn submit-btn">Save Refuel</button>
+        </div>
+      </form>
     </div>
   </div>
 

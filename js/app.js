@@ -778,7 +778,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'btn-cancel-delete-vehicle',
     'btn-close-routine-desc-view', 'btn-close-routine-desc-view-footer',
     'btn-close-service-notes-view', 'btn-close-service-notes-view-footer',
-    'btn-close-custom-confirm', 'btn-cancel-custom-confirm'
+    'btn-close-custom-confirm', 'btn-cancel-custom-confirm',
+    'btn-close-log-fuel', 'btn-cancel-log-fuel'
   ];
   modalCloseBtnIds.forEach(id => {
     document.getElementById(id)?.addEventListener('click', closeModal);
@@ -817,14 +818,76 @@ document.addEventListener('DOMContentLoaded', () => {
             date: Number(document.getElementById('reminder-monthly-date').value) || 1,
             time: document.getElementById('reminder-monthly-time').value || '10:00'
           }
-        }
+        },
+        fuel_types: Array.from(document.querySelectorAll('#fuel-types-list .fuel-type-editor-row')).map((row, i) => ({
+          id: `ft-${i + 1}`,
+          name: row.querySelector('.fuel-type-name-input')?.value.trim() || 'Fuel',
+          price: Number(row.querySelector('.fuel-type-price-input')?.value) || 0
+        })).filter(f => f.name.length > 0)
       };
 
       saveAppState(state);
+      if (typeof populateFuelTypeDropdown === 'function') {
+        populateFuelTypeDropdown(state.settings.fuel_types);
+      }
       renderAll(state);
       showToast('Settings saved successfully.', 'success');
     });
   }
+
+  // Add Fuel Type Row in Settings
+  document.getElementById('btn-add-fuel-type')?.addEventListener('click', () => {
+    const list = document.getElementById('fuel-types-list');
+    if (!list) return;
+    const div = document.createElement('div');
+    div.className = 'fuel-type-editor-row';
+    div.innerHTML = `
+      <div class="fuel-type-col-name">
+        <label class="fuel-type-label">Fuel Name</label>
+        <input type="text" class="fuel-type-name-input" value="" placeholder="e.g., BP 92" required>
+      </div>
+      <div class="fuel-type-col-price">
+        <label class="fuel-type-label">Price / Liter (IDR)</label>
+        <input type="number" class="fuel-type-price-input" min="0" value="15000" placeholder="15000" required>
+      </div>
+      <button type="button" class="btn-remove-fuel-type" title="Remove fuel type">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    `;
+    list.appendChild(div);
+    div.querySelector('.fuel-type-name-input')?.focus();
+    triggerHaptic('light');
+  });
+
+  // Remove Fuel Type Row delegation
+  document.getElementById('fuel-types-list')?.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.btn-remove-fuel-type');
+    if (removeBtn) {
+      const row = removeBtn.closest('.fuel-type-editor-row');
+      if (row) {
+        row.remove();
+        triggerHaptic('light');
+      }
+    }
+  });
+
+  // Load Example Fuel Presets in Settings
+  document.getElementById('btn-load-example-fuel-types')?.addEventListener('click', () => {
+    const list = window.EXAMPLE_FUEL_TYPES || [
+      { id: 'ft-1', name: 'Pertalite', price: 10000 },
+      { id: 'ft-2', name: 'Pertamax', price: 12950 },
+      { id: 'ft-3', name: 'Pertamax Turbo', price: 14400 },
+      { id: 'ft-4', name: 'Shell Super', price: 13500 },
+      { id: 'ft-5', name: 'Shell V-Power', price: 14500 }
+    ];
+    if (typeof renderFuelTypesEditor === 'function') {
+      renderFuelTypesEditor(list);
+      triggerHaptic('success');
+      showToast('Loaded standard Indonesian fuel presets. Tap "Save Settings" to apply.', 'info');
+    }
+  });
 
   // ==========================================================================
   // NOTIFICATION DUE ACTION BUTTONS
@@ -1572,6 +1635,196 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
+  // ==========================================================================
+  // FUEL REFUEL TRACKING HANDLERS
+  // ==========================================================================
+  function openFuelModal() {
+    const activeVeh = getActiveVehicle(state);
+    const todayStr = window.formatLocalDate ? window.formatLocalDate(new Date()) : new Date().toISOString().split('T')[0];
+
+    const editIdInput = document.getElementById('fuel-log-edit-id');
+    const modalTitle = document.getElementById('modal-log-fuel-title');
+    if (editIdInput) editIdInput.value = '';
+    if (modalTitle) modalTitle.textContent = '⛽ Log Fuel Refuel';
+
+    const dateInput = document.getElementById('fuel-log-date');
+    const odoInput = document.getElementById('fuel-log-odometer');
+    if (dateInput) dateInput.value = todayStr;
+    if (odoInput) odoInput.value = activeVeh ? (activeVeh.meta.current_odometer || 0) : 0;
+
+    if (typeof populateFuelTypeDropdown === 'function') {
+      populateFuelTypeDropdown(state.settings?.fuel_types);
+    }
+
+    const typeSelect = document.getElementById('fuel-log-type');
+    const priceInput = document.getElementById('fuel-log-price');
+    if (typeSelect && typeSelect.options.length > 0) {
+      typeSelect.selectedIndex = 0;
+      const opt = typeSelect.options[0];
+      const p = opt?.getAttribute('data-price');
+      if (priceInput) priceInput.value = p || '';
+    }
+    const costInput = document.getElementById('fuel-log-cost');
+    const litersInput = document.getElementById('fuel-log-liters');
+    const fullTankSwitch = document.getElementById('fuel-log-full-tank');
+    const notesInput = document.getElementById('fuel-log-notes');
+
+    if (costInput) costInput.value = '';
+    if (litersInput) litersInput.value = '';
+    if (fullTankSwitch) fullTankSwitch.checked = true;
+    if (notesInput) notesInput.value = '';
+
+    triggerHaptic('light');
+    openModal('modal-log-fuel');
+  }
+
+  // Open Fuel Modal click delegation (works across dynamic re-renders)
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#btn-hud-log-fuel') || e.target.closest('#btn-open-fuel-log-view-b')) {
+      openFuelModal();
+    }
+  });
+
+  // Dynamic Fuel price selection
+  const fuelTypeSelect = document.getElementById('fuel-log-type');
+  const fuelPriceInput = document.getElementById('fuel-log-price');
+  const fuelCostInput = document.getElementById('fuel-log-cost');
+  const fuelLitersInput = document.getElementById('fuel-log-liters');
+
+  fuelTypeSelect?.addEventListener('change', (e) => {
+    const selectedOption = e.target.options[e.target.selectedIndex];
+    const price = selectedOption.getAttribute('data-price');
+    if (price && fuelPriceInput) {
+      fuelPriceInput.value = price;
+      const cost = parseFloat(fuelCostInput?.value || '0');
+      if (cost > 0 && parseFloat(price) > 0 && fuelLitersInput) {
+        fuelLitersInput.value = (cost / parseFloat(price)).toFixed(2);
+      }
+    }
+  });
+
+  fuelPriceInput?.addEventListener('input', () => {
+    const price = parseFloat(fuelPriceInput.value) || 0;
+    const cost = parseFloat(fuelCostInput?.value || '0') || 0;
+    if (price > 0 && cost > 0 && fuelLitersInput) {
+      fuelLitersInput.value = (cost / price).toFixed(2);
+    }
+  });
+
+  // Bidirectional cost <-> liters instant calculation
+  fuelCostInput?.addEventListener('input', () => {
+    const cost = parseFloat(fuelCostInput.value) || 0;
+    const price = parseFloat(fuelPriceInput?.value || '0') || 0;
+    if (price > 0 && cost > 0 && fuelLitersInput) {
+      fuelLitersInput.value = (cost / price).toFixed(2);
+    }
+  });
+
+  fuelLitersInput?.addEventListener('input', () => {
+    const liters = parseFloat(fuelLitersInput.value) || 0;
+    const price = parseFloat(fuelPriceInput?.value || '0') || 0;
+    if (price > 0 && liters > 0 && fuelCostInput) {
+      fuelCostInput.value = Math.round(liters * price);
+    }
+  });
+
+  // Submit Fuel Log (Create or Edit)
+  const formLogFuel = document.getElementById('form-log-fuel');
+  formLogFuel?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const editId = document.getElementById('fuel-log-edit-id')?.value;
+    const date = document.getElementById('fuel-log-date')?.value;
+    const odo = parseInt(document.getElementById('fuel-log-odometer')?.value, 10) || 0;
+    const fuelType = document.getElementById('fuel-log-type')?.value;
+    const pricePerLiter = parseFloat(document.getElementById('fuel-log-price')?.value) || 0;
+    const totalCost = parseFloat(document.getElementById('fuel-log-cost')?.value) || 0;
+    const liters = parseFloat(document.getElementById('fuel-log-liters')?.value) || 0;
+    const isFullTank = Boolean(document.getElementById('fuel-log-full-tank')?.checked);
+    const notes = document.getElementById('fuel-log-notes')?.value.trim() || '';
+
+    if (liters <= 0 || totalCost <= 0) {
+      showToast('Please enter valid fuel amount and cost.', 'error');
+      return;
+    }
+
+    const payload = {
+      date,
+      odometer: odo,
+      fuel_type: fuelType,
+      price_per_liter: pricePerLiter,
+      total_cost: totalCost,
+      liters,
+      is_full_tank: isFullTank,
+      notes
+    };
+
+    if (editId) {
+      if (typeof updateFuelLog === 'function') {
+        updateFuelLog(editId, payload);
+      }
+      showToast('Refuel record updated!', 'success');
+    } else {
+      if (typeof addFuelLog === 'function') {
+        addFuelLog(payload);
+      }
+      showToast('Refuel logged successfully!', 'success');
+    }
+
+    state = getAppState();
+    renderAll(state);
+    closeModal();
+    triggerHaptic('success');
+  });
+
+  // Refuel Log History Actions (Edit & Delete delegation)
+  document.getElementById('fuel-history-list')?.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.btn-edit-fuel');
+    if (editBtn) {
+      const fuelId = editBtn.getAttribute('data-id');
+      const activeVeh = getActiveVehicle(state);
+      const entry = (activeVeh?.fuel_log || []).find(f => f.id === fuelId);
+      if (entry) {
+        document.getElementById('fuel-log-edit-id').value = entry.id;
+        const modalTitle = document.getElementById('modal-log-fuel-title');
+        if (modalTitle) modalTitle.textContent = '✏️ Edit Fuel Refuel';
+
+        document.getElementById('fuel-log-date').value = entry.date || new Date(entry.timestamp).toISOString().split('T')[0];
+        document.getElementById('fuel-log-odometer').value = entry.odometer || 0;
+        document.getElementById('fuel-log-type').value = entry.fuel_type || 'Pertalite';
+        document.getElementById('fuel-log-price').value = entry.price_per_liter || 0;
+        document.getElementById('fuel-log-cost').value = entry.total_cost || 0;
+        document.getElementById('fuel-log-liters').value = entry.liters || 0;
+        document.getElementById('fuel-log-full-tank').checked = Boolean(entry.is_full_tank);
+        document.getElementById('fuel-log-notes').value = entry.notes || '';
+
+        triggerHaptic('light');
+        openModal('modal-log-fuel');
+      }
+      return;
+    }
+
+    const deleteBtn = e.target.closest('.btn-delete-fuel');
+    if (deleteBtn) {
+      const fuelId = deleteBtn.getAttribute('data-id');
+      showCustomConfirmModal({
+        title: '🗑️ Delete Refuel Log',
+        message: 'Are you sure you want to delete this refuel record? Fuel economy stats will be recomputed.',
+        confirmText: 'Delete Record',
+        confirmClass: 'danger-btn',
+        headerClass: 'header-danger',
+        onConfirm: () => {
+          if (typeof deleteFuelLog === 'function') {
+            deleteFuelLog(fuelId);
+          }
+          state = getAppState();
+          renderAll(state);
+          triggerHaptic('light');
+          showToast('Refuel record deleted.', 'success');
+        }
+      });
+    }
+  });
 
   // Register PWA service worker
   if ('serviceWorker' in navigator) {

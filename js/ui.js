@@ -21,6 +21,35 @@ function formatOdometer(value, length = 6) {
 }
 
 /**
+ * Test whether a service matches a search query string.
+ * @param {object} service
+ * @param {string} query
+ * @returns {boolean}
+ */
+function matchesServiceQuery(service, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  if (!q) return true;
+
+  const nameMatch = service.name ? service.name.toLowerCase().includes(q) : false;
+  const notesMatch = service.notes ? service.notes.toLowerCase().includes(q) : false;
+  const descMatch = service.desc ? service.desc.toLowerCase().includes(q) : false;
+  const descriptionMatch = service.description ? service.description.toLowerCase().includes(q) : false;
+
+  let numMatch = false;
+  if (!isNaN(parseInt(q, 10))) {
+    const sInterval = String(service.interval_km || '');
+    const sWarning = String(service.warning_threshold || '');
+    const sLast = String(service.last_service_odometer || '');
+    const sNext = String(service.nextOdometer || '');
+
+    numMatch = sInterval.includes(q) || sWarning.includes(q) || sLast.includes(q) || sNext.includes(q);
+  }
+
+  return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
+}
+
+/**
  * Display toast notification.
  * @param {string} message
  * @param {'success'|'error'} type
@@ -287,35 +316,6 @@ function renderServiceTable(state) {
   // Active odometer to compute dynamic status for config list view
   const currentOdo = state.meta?.current_odometer || 0;
   const enriched = computeAllServices(services, currentOdo);
-
-/**
- * Test whether a service matches a search query string.
- * @param {object} service
- * @param {string} query
- * @returns {boolean}
- */
-function matchesServiceQuery(service, query) {
-  if (!query) return true;
-  const q = query.toLowerCase().trim();
-  if (!q) return true;
-
-  const nameMatch = service.name ? service.name.toLowerCase().includes(q) : false;
-  const notesMatch = service.notes ? service.notes.toLowerCase().includes(q) : false;
-  const descMatch = service.desc ? service.desc.toLowerCase().includes(q) : false;
-  const descriptionMatch = service.description ? service.description.toLowerCase().includes(q) : false;
-
-  let numMatch = false;
-  if (!isNaN(parseInt(q, 10))) {
-    const sInterval = String(service.interval_km || '');
-    const sWarning = String(service.warning_threshold || '');
-    const sLast = String(service.last_service_odometer || '');
-    const sNext = String(service.nextOdometer || '');
-
-    numMatch = sInterval.includes(q) || sWarning.includes(q) || sLast.includes(q) || sNext.includes(q);
-  }
-
-  return nameMatch || notesMatch || descMatch || descriptionMatch || numMatch;
-}
 
   // Search filtering
   const componentsQuery = window.componentsSearchQuery || '';

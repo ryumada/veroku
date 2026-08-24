@@ -921,10 +921,109 @@ body {
   transition: all var(--md-transition-standard);
 }
 .hud-form button:hover {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
 }
+
+/* Quick Odometer Increment Chips */
+.quick-odo-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.quick-chip-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-right: 2px;
+}
+
+.chip-odo-quick {
+  background-color: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-primary);
+  border-radius: var(--md-shape-full);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+}
+.chip-odo-quick:hover {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-1px);
+}
+.chip-odo-quick:active {
+  transform: scale(0.94);
+}
+
+/* Fleet Health Summary Badges */
+.fleet-health-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.health-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--md-shape-full);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+  transition: all var(--md-transition-standard);
+  user-select: none;
+}
+
+.health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.dot-optimal { background-color: var(--status-optimal); box-shadow: 0 0 6px var(--status-optimal); }
+.dot-warning { background-color: var(--status-warning); box-shadow: 0 0 6px var(--status-warning); }
+.dot-critical { background-color: var(--status-critical); box-shadow: 0 0 6px var(--status-critical); }
+
+/* Checklist Header Actions & Check All Button */
+.checklist-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.check-all-btn {
+  background-color: rgba(35, 134, 54, 0.15);
+  color: var(--status-optimal);
+  border: 1px solid rgba(35, 134, 54, 0.35);
+  border-radius: var(--md-shape-full);
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+}
+.check-all-btn:hover {
+  background-color: var(--status-optimal);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(35, 134, 54, 0.25);
+}
+.check-all-btn:active {
+  transform: scale(0.95);
+}
+
 .hud-form button:active {
   transform: scale(0.97);
 }

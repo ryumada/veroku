@@ -148,6 +148,14 @@ function renderOdometerHUD(state) {
         <input type="number" id="input-hud-odo" min="${currentOdo}" value="${currentOdo}" required placeholder="${currentOdo}">
         <button type="submit" title="Submit new Odometer reading">LOG</button>
       </form>
+      <div class="quick-odo-chips">
+        <span class="quick-chip-label">Quick Add:</span>
+        <button type="button" class="chip-odo-quick" data-add="10">+10</button>
+        <button type="button" class="chip-odo-quick" data-add="25">+25</button>
+        <button type="button" class="chip-odo-quick" data-add="50">+50</button>
+        <button type="button" class="chip-odo-quick" data-add="100">+100</button>
+        <button type="button" class="chip-odo-quick" data-add="500">+500</button>
+      </div>
     </div>
     <div style="width: 100%; flex-basis: 100%;">
       ${chartHtml}
@@ -163,7 +171,28 @@ function renderOdometerHUD(state) {
 function renderServiceCards(enrichedServices, activeVeh) {
   const container = document.getElementById('service-cards');
   const paginationBar = document.getElementById('dashboard-pagination');
+  const fleetSummaryContainer = document.getElementById('fleet-health-summary');
   if (!container) return;
+
+  // Render Fleet Health Summary Badges
+  if (fleetSummaryContainer) {
+    const allServices = activeVeh && Array.isArray(activeVeh.services) ? enrichedServices : [];
+    const countCritical = allServices.filter(s => s.status && s.status.cssClass === 'status--critical').length;
+    const countWarning = allServices.filter(s => s.status && s.status.cssClass === 'status--warning').length;
+    const countOptimal = allServices.filter(s => s.status && s.status.cssClass === 'status--optimal').length;
+
+    fleetSummaryContainer.innerHTML = `
+      <div class="health-chip chip-optimal" title="Components in optimal condition">
+        <span class="health-dot dot-optimal"></span> ${countOptimal} Optimal
+      </div>
+      <div class="health-chip chip-warning" title="Components near maintenance threshold">
+        <span class="health-dot dot-warning"></span> ${countWarning} Warning
+      </div>
+      <div class="health-chip chip-critical" title="Components overdue for service">
+        <span class="health-dot dot-critical"></span> ${countCritical} Overdue
+      </div>
+    `;
+  }
 
   if (enrichedServices.length === 0) {
     if (paginationBar) paginationBar.setAttribute('hidden', 'true');

@@ -74,7 +74,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="p-span">Critical checks before ignition</span>
               </span>
               <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
               </svg>
             </button>
 
@@ -85,7 +85,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="p-span">Standard routine inspections</span>
               </span>
               <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
               </svg>
             </button>
 
@@ -96,7 +96,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="p-span">Deep physical inspections</span>
               </span>
               <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
               </svg>
             </button>
           </div>
@@ -105,11 +105,12 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <div class="dashboard-trackers-header">
             <div class="section-header">
               <h2>PART DEGRADATION TRACKERS</h2>
-              <span class="subtitle">Real-time status monitoring</span>
+              <div class="fleet-health-summary" id="fleet-health-summary"></div>
             </div>
             <div class="header-controls">
               <div class="search-control">
-                <input type="text" id="search-dashboard" placeholder="🔍 Search task, notes, KM..." class="search-input">
+                <input type="text" id="search-dashboard" placeholder="🔍 Search task, notes, KM..."
+                  class="search-input">
               </div>
               <div class="sort-control">
                 <label for="select-dashboard-sort">Sort By:</label>
@@ -318,7 +319,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <div class="card cost-summary-card">
             <h3>Cost Summary</h3>
             <p class="form-desc">Total spending on vehicle maintenance.</p>
-            
+
             <!-- Cost Summary Filter & Date Controls -->
             <div class="history-nav-bar cost-nav-bar">
               <div class="history-filter-toggles">
@@ -330,7 +331,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <button type="button" id="btn-cost-prev" class="nav-btn-arrow">◀</button>
                 <div class="picker-display-wrap" id="cost-picker-wrap" title="Click to pick month or year">
                   <span id="cost-date-display" class="history-date-label">2026</span>
-                  <input type="month" id="cost-month-picker" class="history-month-picker" aria-label="Pick Month and Year">
+                  <input type="month" id="cost-month-picker" class="history-month-picker"
+                    aria-label="Pick Month and Year">
                 </div>
                 <button type="button" id="btn-cost-next" class="nav-btn-arrow">▶</button>
                 <button type="button" id="btn-cost-now" class="nav-btn-sm btn-now">Now</button>
@@ -356,7 +358,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <button type="button" id="btn-history-prev" class="nav-btn-arrow">◀</button>
                 <div class="picker-display-wrap" id="history-picker-wrap" title="Click to pick month or year">
                   <span id="history-date-display" class="history-date-label">June 2026</span>
-                  <input type="month" id="history-month-picker" class="history-month-picker" aria-label="Pick Month and Year">
+                  <input type="month" id="history-month-picker" class="history-month-picker"
+                    aria-label="Pick Month and Year">
                 </div>
                 <button type="button" id="btn-history-next" class="nav-btn-arrow">▶</button>
                 <button type="button" id="btn-history-now" class="nav-btn-sm btn-now">Now</button>
@@ -384,7 +387,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="checklist-badge daily">DAILY</span>
                 <h2>Pre-Ride Safety</h2>
               </div>
-              <button type="button" class="reset-btn" id="btn-reset-daily">Reset Checked</button>
+              <div class="checklist-header-actions">
+                <button type="button" class="check-all-btn" id="btn-check-all-daily">✓ Check All</button>
+                <button type="button" class="reset-btn" id="btn-reset-daily">Reset</button>
+              </div>
             </div>
 
             <!-- Trigger for Adding Daily Check Item Modal -->
@@ -404,7 +410,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="checklist-badge weekly">WEEKLY</span>
                 <h2>Weekly Protocol</h2>
               </div>
-              <button type="button" class="reset-btn" id="btn-reset-weekly">Reset Checked</button>
+              <div class="checklist-header-actions">
+                <button type="button" class="check-all-btn" id="btn-check-all-weekly">✓ Check All</button>
+                <button type="button" class="reset-btn" id="btn-reset-weekly">Reset</button>
+              </div>
             </div>
 
             <!-- Trigger for Adding Weekly Check Item Modal -->
@@ -424,7 +433,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <span class="checklist-badge monthly">MONTHLY</span>
                 <h2>System Inspection</h2>
               </div>
-              <button type="button" class="reset-btn" id="btn-reset-monthly">Reset Checked</button>
+              <div class="checklist-header-actions">
+                <button type="button" class="check-all-btn" id="btn-check-all-monthly">✓ Check All</button>
+                <button type="button" class="reset-btn" id="btn-reset-monthly">Reset</button>
+              </div>
             </div>
 
             <!-- Trigger for Adding Monthly Check Item Modal -->
@@ -605,14 +617,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Data Management Accordion Card -->
           <div class="card settings-card accordion-card" id="accordion-data-mgmt">
-            <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt" role="button" tabindex="0" aria-expanded="false">
+            <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt" role="button" tabindex="0"
+              aria-expanded="false">
               <div class="accordion-title-wrap">
                 <span class="btn-icon">💾</span>
                 <h3 class="accordion-title">Backup &amp; Data Portability</h3>
               </div>
               <span class="accordion-arrow-wrap">
                 <svg class="accordion-chevron" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
                 </svg>
               </span>
             </div>
@@ -636,14 +649,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Danger Zone Accordion Card -->
           <div class="card settings-card accordion-card danger-zone-card" id="accordion-danger-zone">
-            <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone" role="button" tabindex="0" aria-expanded="false">
+            <div class="settings-card-header accordion-header" id="btn-toggle-danger-zone" role="button" tabindex="0"
+              aria-expanded="false">
               <div class="accordion-title-wrap">
                 <span class="btn-icon">⚠️</span>
                 <h3 class="accordion-title danger-title">Danger Zone</h3>
               </div>
               <span class="accordion-arrow-wrap">
                 <svg class="accordion-chevron" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                  <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
                 </svg>
               </span>
             </div>
@@ -784,8 +798,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         </div>
       </div>
       <div class="modal-actions-bar">
-        <button type="button" class="reset-btn" id="btn-reset-daily-modal">Reset Checked</button>
-        <button type="button" class="action-btn submit-btn" id="btn-confirm-daily-modal">Close</button>
+        <button type="button" class="check-all-btn" id="btn-check-all-daily-modal">✓ Check All</button>
+        <button type="button" class="reset-btn" id="btn-reset-daily-modal">Reset</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-daily-modal">Done</button>
       </div>
     </div>
   </div>
@@ -806,8 +821,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         </div>
       </div>
       <div class="modal-actions-bar">
-        <button type="button" class="reset-btn" id="btn-reset-weekly-modal">Reset Checked</button>
-        <button type="button" class="action-btn submit-btn" id="btn-confirm-weekly-modal">Close</button>
+        <button type="button" class="check-all-btn" id="btn-check-all-weekly-modal">✓ Check All</button>
+        <button type="button" class="reset-btn" id="btn-reset-weekly-modal">Reset</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-weekly-modal">Done</button>
       </div>
     </div>
   </div>
@@ -828,8 +844,9 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
         </div>
       </div>
       <div class="modal-actions-bar">
-        <button type="button" class="reset-btn" id="btn-reset-monthly-modal">Reset Checked</button>
-        <button type="button" class="action-btn submit-btn" id="btn-confirm-monthly-modal">Close</button>
+        <button type="button" class="check-all-btn" id="btn-check-all-monthly-modal">✓ Check All</button>
+        <button type="button" class="reset-btn" id="btn-reset-monthly-modal">Reset</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-monthly-modal">Done</button>
       </div>
     </div>
   </div>

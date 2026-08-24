@@ -609,8 +609,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // CHECKLIST RESET ROUTINES
+  // HAPTIC FEEDBACK & CHECKLIST ACTIONS
   // ==========================================================================
+  function triggerHaptic(type = 'light') {
+    if (!navigator.vibrate) return;
+    try {
+      if (type === 'light') navigator.vibrate(10);
+      else if (type === 'medium') navigator.vibrate(25);
+      else if (type === 'success') navigator.vibrate([15, 30, 20]);
+    } catch (_) {}
+  }
+
+  function checkAllTasks(type) {
+    const activeVeh = getActiveVehicle(state);
+    if (activeVeh.routine_checks && activeVeh.routine_checks[type]) {
+      activeVeh.routine_checks[type].forEach(item => item.checked = true);
+    }
+    if (type === 'daily') {
+      const updatedStreak = computeStreakUpdate(activeVeh.meta, activeVeh.routine_checks.daily);
+      activeVeh.meta.streak_days = updatedStreak.streak_days;
+      activeVeh.meta.streak_last_completed_date = updatedStreak.streak_last_completed_date;
+    }
+    saveAppState(state);
+    renderAll(state);
+    triggerHaptic('success');
+    showToast(`All ${type} safety checks completed!`, 'success');
+  }
+
   function resetChecklist(type) {
     const activeVeh = getActiveVehicle(state);
     if (activeVeh.routine_checks && activeVeh.routine_checks[type]) {
@@ -618,24 +643,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     saveAppState(state);
     renderAll(state);
+    triggerHaptic('light');
     showToast(`Reset ${type} checklist tasks.`, 'success');
   }
 
   ['daily', 'weekly', 'monthly'].forEach(type => {
+    document.getElementById(`btn-check-all-${type}`)?.addEventListener('click', () => checkAllTasks(type));
+    document.getElementById(`btn-check-all-${type}-modal`)?.addEventListener('click', () => checkAllTasks(type));
     document.getElementById(`btn-reset-${type}`)?.addEventListener('click', () => resetChecklist(type));
     document.getElementById(`btn-reset-${type}-modal`)?.addEventListener('click', () => resetChecklist(type));
+  });
+
+  // Quick Odometer Increment Chips
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip-odo-quick');
+    if (chip) {
+      const addVal = parseInt(chip.getAttribute('data-add'), 10) || 0;
+      const input = document.getElementById('input-hud-odo');
+      if (input) {
+        const current = parseInt(input.value, 10) || 0;
+        input.value = current + addVal;
+        triggerHaptic('light');
+      }
+    }
   });
 
   // ==========================================================================
   // ROUTINES MODAL TRIGGERS
   // ==========================================================================
   document.getElementById('btn-open-daily')?.addEventListener('click', () => {
+    triggerHaptic('light');
     openModal('modal-daily');
   });
   document.getElementById('btn-open-weekly')?.addEventListener('click', () => {
+    triggerHaptic('light');
     openModal('modal-weekly');
   });
   document.getElementById('btn-open-monthly')?.addEventListener('click', () => {
+    triggerHaptic('light');
     openModal('modal-monthly');
   });
 

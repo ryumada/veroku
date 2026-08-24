@@ -232,13 +232,13 @@ body {
 
 /* Sidebar / Navigation Rail */
 .app-header {
-  background-color: var(--md-sys-color-surface-container-low);
+  background-color: var(--md-sys-color-surface);
   border-right: 1px solid var(--md-sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 24px 18px;
   justify-content: space-between;
-  gap: 24px;
+  gap: 28px;
   z-index: 100;
 }
 
@@ -246,23 +246,23 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 8px 12px;
-  background-color: var(--md-sys-color-surface-container);
-  border-radius: var(--md-shape-lg);
-  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
 }
 
 .brand-icon {
-  font-size: 26px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--md-sys-color-primary-container), var(--md-sys-color-surface-container-highest));
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
   border-radius: var(--md-shape-md);
   border: 1px solid var(--md-sys-color-outline-variant);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .brand-text {

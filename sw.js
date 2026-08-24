@@ -1,4 +1,4 @@
-const CACHE_NAME = 'veroku-cache-v1';
+const CACHE_NAME = 'veroku-cache-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,12 @@ const ASSETS = [
   './js/engine.js',
   './js/ui.js',
   './js/app.js',
-  './manifest.json'
+  './manifest.json',
+  './fonts/dm-sans-400.woff2',
+  './fonts/dm-sans-500.woff2',
+  './fonts/rajdhani-400.woff2',
+  './fonts/rajdhani-600.woff2',
+  './fonts/rajdhani-700.woff2'
 ];
 
 // Install Event - cache core shell assets

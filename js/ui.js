@@ -180,6 +180,12 @@ function renderServiceCards(enrichedServices, activeVeh) {
     }
     if (!nextExpectedText) nextExpectedText = '-';
 
+    let progressPercent = 0;
+    if (s.interval_km && s.deltaRemainingKm !== null) {
+      const elapsed = Number(s.interval_km) - s.deltaRemainingKm;
+      progressPercent = Math.min(100, Math.max(0, Math.round((elapsed / Number(s.interval_km)) * 100)));
+    }
+
     html += `
       <div class="tracker-card ${s.status.cssClass}">
         <div class="tracker-header">
@@ -191,6 +197,9 @@ function renderServiceCards(enrichedServices, activeVeh) {
           <div class="tracker-remaining">
             <span class="tracker-remaining-header">Maintenance Delta</span>
             <span class="tracker-remaining-value">${deltaText}</span>
+            <div class="m3-progress-track" title="${progressPercent}% elapsed">
+              <div class="m3-progress-fill" style="width: ${progressPercent}%;"></div>
+            </div>
             ${forecastHtml}
           </div>
 

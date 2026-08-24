@@ -79,8 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
       sections.forEach(sec => {
         if (sec.id === targetId) {
           sec.removeAttribute('hidden');
+          sec.style.display = '';
         } else {
           sec.setAttribute('hidden', 'true');
+          sec.style.display = 'none';
         }
       });
     });

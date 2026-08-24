@@ -199,6 +199,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global Hidden Rule */
+[hidden] {
+  display: none !important;
+}
+
 /* Custom M3 Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
@@ -366,6 +371,9 @@ body {
   max-width: 1240px;
   margin: 0 auto;
   animation: m3FadeIn var(--md-transition-standard) ease-out;
+}
+.view-section[hidden] {
+  display: none !important;
 }
 
 @keyframes m3FadeIn {
@@ -1396,6 +1404,7 @@ tr:hover td {
   color: var(--md-sys-color-on-surface);
 }
 
+.modal-close,
 .modal-close-btn {
   background: transparent;
   border: none;
@@ -1410,6 +1419,7 @@ tr:hover td {
   justify-content: center;
   transition: all var(--md-transition-standard);
 }
+.modal-close:hover,
 .modal-close-btn:hover {
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);

@@ -920,6 +920,7 @@ function closeModal() {
   const overlays = document.querySelectorAll('.modal-overlay');
   overlays.forEach(modal => {
     modal.setAttribute('hidden', 'true');
+    modal.style.display = 'none';
   });
   pendingImportFile = null;
 }

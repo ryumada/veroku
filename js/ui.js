@@ -1048,10 +1048,39 @@ function renderAll(state) {
   renderMonthlyChecklist(scopedState);
   renderModalChecklists(scopedState);
   renderSettings(state);
+  renderAutoSnapshots();
 
   // Render cost summary and history logs
   renderCostSummary(activeVeh, window.costFilterMode || 'yearly', window.costActiveDate || new Date());
   renderServiceHistory(activeVeh, window.historyFilterMode || 'monthly', window.historyActiveDate || new Date());
+}
+
+/**
+ * Render rolling auto-snapshot history inside Data Portability settings.
+ */
+function renderAutoSnapshots() {
+  const container = document.getElementById('auto-snapshots-list');
+  if (!container) return;
+
+  const snapshots = typeof getAutoSnapshots === 'function' ? getAutoSnapshots() : [];
+  if (snapshots.length === 0) {
+    container.innerHTML = `<div class="snapshot-empty">No auto-snapshots recorded yet. Major actions will automatically create recovery points here.</div>`;
+    return;
+  }
+
+  container.innerHTML = snapshots.map(s => {
+    return `
+      <div class="snapshot-item">
+        <div class="snapshot-info">
+          <span class="snapshot-time">${s.dateStr}</span>
+          <span class="snapshot-reason">${s.vehicleName} • ${s.reason}</span>
+        </div>
+        <button type="button" class="action-btn outline-btn snapshot-restore-btn" data-snapshot-id="${s.id}" title="Restore this auto-saved state">
+          ↩️ Restore
+        </button>
+      </div>
+    `;
+  }).join('');
 }
 
 /**
@@ -1131,6 +1160,57 @@ function closeModal() {
     modal.style.display = '';
   });
   pendingImportFile = null;
+  currentConfirmCallback = null;
+}
+
+let currentConfirmCallback = null;
+
+/**
+ * Open the custom M3 confirmation modal.
+ * @param {object} options
+ * @param {string} [options.title]
+ * @param {string} [options.message]
+ * @param {string} [options.confirmText]
+ * @param {string} [options.confirmClass]
+ * @param {string} [options.headerClass]
+ * @param {Function} options.onConfirm
+ */
+function showCustomConfirmModal({
+  title = '⚠️ Confirm Action',
+  message = 'Are you sure you want to proceed with this action?',
+  confirmText = 'Confirm',
+  confirmClass = 'danger-btn',
+  headerClass = 'header-danger',
+  onConfirm
+}) {
+  const titleEl = document.getElementById('custom-confirm-title');
+  const messageEl = document.getElementById('custom-confirm-message');
+  const confirmBtn = document.getElementById('btn-action-custom-confirm');
+  const headerEl = document.getElementById('custom-confirm-header');
+
+  if (titleEl) titleEl.textContent = title;
+  if (messageEl) messageEl.textContent = message;
+
+  if (headerEl) {
+    headerEl.className = `modal-header ${headerClass}`;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.textContent = confirmText;
+    confirmBtn.className = `action-btn ${confirmClass}`;
+  }
+
+  currentConfirmCallback = onConfirm || null;
+  openModal('modal-custom-confirm');
+}
+
+function handleCustomConfirmAction() {
+  const cb = currentConfirmCallback;
+  currentConfirmCallback = null;
+  closeModal();
+  if (typeof cb === 'function') {
+    cb();
+  }
 }
 
 /**
@@ -1388,10 +1468,43 @@ function renderCostSummary(activeVeh, filterMode, activeDate) {
     `;
   }
 
+  // Monthly Spending Trend Bar Chart (Last 6 Months)
+  const trends = typeof computeMonthlySpendTrends === 'function' ? computeMonthlySpendTrends(history, 6) : [];
+  const maxTotal = Math.max(...trends.map(t => t.total), 1);
+  const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+  const chartBarsHtml = trends.map(t => {
+    const heightPercent = t.total > 0 ? Math.max(12, Math.round((t.total / maxTotal) * 100)) : 0;
+    const formattedCost = t.total > 0 ? `${t.total.toLocaleString()} IDR` : '0 IDR';
+    const isCurrent = t.monthKey === currentMonthKey;
+    return `
+      <div class="spend-bar-col ${isCurrent ? 'current-month' : ''}" title="${t.monthLabel} ${t.year}: ${formattedCost}">
+        <div class="spend-bar-track">
+          <div class="spend-bar ${t.total > 0 ? 'has-spend' : ''}" style="height: ${heightPercent}%;">
+            <span class="spend-bar-tooltip">${formattedCost}</span>
+          </div>
+        </div>
+        <span class="spend-bar-month">${t.monthLabel}</span>
+      </div>
+    `;
+  }).join('');
+
+  const chartHtml = trends.length > 0 ? `
+    <div class="spend-trend-chart-card">
+      <div class="spend-trend-header">
+        <span class="spend-trend-title">📊 Spending Trend (Last 6 Months)</span>
+      </div>
+      <div class="spend-trend-grid">
+        ${chartBarsHtml}
+      </div>
+    </div>
+  ` : '';
+
   container.innerHTML = `
     <div class="cost-total-label">
       Total Maintenance Cost (${timeFrameStr}): ${summary.total.toLocaleString()} IDR
     </div>
+    ${chartHtml}
     <div class="cost-breakdown-container">
       <h4 class="per-component-title">Spend Per Component</h4>
       ${componentsHtml}
@@ -1511,3 +1624,5 @@ window.renderVehicleSelector = renderVehicleSelector;
 window.renderCostSummary = renderCostSummary;
 window.renderServiceHistory = renderServiceHistory;
 window.updateComponentsViewVisibility = updateComponentsViewVisibility;
+window.showCustomConfirmModal = showCustomConfirmModal;
+window.handleCustomConfirmAction = handleCustomConfirmAction;

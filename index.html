@@ -346,8 +346,17 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Service History Card -->
           <div class="card service-history-card">
-            <h3>Service Log History</h3>
-            <p class="form-desc">Logs of completed services and inspections.</p>
+            <div class="service-history-header-wrap">
+              <div>
+                <h3>Service Log History</h3>
+                <p class="form-desc">Logs of completed services and inspections.</p>
+              </div>
+              <div class="history-quick-actions">
+                <button type="button" class="action-btn outline-btn data-btn" id="btn-export-csv" title="Export Service History as CSV spreadsheet">
+                  <span>📊</span> Export CSV
+                </button>
+              </div>
+            </div>
             <!-- Service History Date Navigation Controls -->
             <div class="history-nav-bar">
               <div class="history-filter-toggles">
@@ -635,12 +644,27 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                   <p class="settings-card-description">Export your current data as a backup file, or restore from an
                     existing JSON backup. Restoring will overwrite all local settings and database entries.</p>
                   <div class="data-mgmt-actions">
-                    <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn">
+                    <button type="button" id="btn-export-settings" class="action-btn outline-btn data-btn" title="Download backup JSON file">
                       <span>📤</span> Export Backup
                     </button>
-                    <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn">
+                    <button type="button" id="btn-share-settings" class="action-btn outline-btn data-btn" title="Share backup JSON directly to other apps">
+                      <span>📲</span> Share Backup
+                    </button>
+                    <button type="button" id="btn-import-settings" class="action-btn outline-btn data-btn" title="Restore from backup JSON file">
                       <span>📥</span> Import Backup
                     </button>
+                  </div>
+
+                  <div class="m3-divider" style="margin: 20px 0 16px;"></div>
+
+                  <div class="snapshots-section">
+                    <div class="snapshots-header">
+                      <span class="snapshots-title">⏱️ Rolling Auto-Snapshots (5 Revisions)</span>
+                      <span class="snapshots-desc">Automatically preserves your last 5 local state revisions for instant 1-click recovery.</span>
+                    </div>
+                    <div id="auto-snapshots-list" class="snapshots-list">
+                      <!-- Dynamically rendered rolling snapshots -->
+                    </div>
                   </div>
                 </div>
               </div>
@@ -910,6 +934,23 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <button type="submit" class="action-btn submit-btn">Add Routine Item</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Generic Custom Confirmation Modal -->
+  <div id="modal-custom-confirm" class="modal-overlay" hidden>
+    <div class="modal-card confirmation-modal-card">
+      <div class="modal-header header-danger" id="custom-confirm-header">
+        <h3 id="custom-confirm-title">⚠️ Confirm Action</h3>
+        <button type="button" class="modal-close" id="btn-close-custom-confirm">&times;</button>
+      </div>
+      <div class="modal-body warning-body">
+        <p id="custom-confirm-message">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn outline-btn" id="btn-cancel-custom-confirm">Cancel</button>
+        <button type="button" class="action-btn danger-btn" id="btn-action-custom-confirm">Confirm</button>
+      </div>
     </div>
   </div>
 

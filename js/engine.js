@@ -286,6 +286,39 @@ function sortByPriority(enrichedServices) {
 }
 
 /**
+ * Compute monthly spending aggregation for the last N months.
+ * @param {Array<object>} history
+ * @param {number} [monthsCount=6]
+ * @returns {Array<{monthKey: string, monthLabel: string, year: number, total: number}>}
+ */
+function computeMonthlySpendTrends(history, monthsCount = 6) {
+  const result = [];
+  const today = new Date();
+
+  for (let i = monthsCount - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const monthKey = `${y}-${String(m + 1).padStart(2, '0')}`;
+    const monthLabel = d.toLocaleString('default', { month: 'short' });
+
+    let total = 0;
+    if (Array.isArray(history)) {
+      history.forEach(item => {
+        if (!item.timestamp) return;
+        const itemDate = new Date(item.timestamp);
+        if (itemDate.getFullYear() === y && itemDate.getMonth() === m) {
+          total += Number(item.cost) || 0;
+        }
+      });
+    }
+    result.push({ monthKey, monthLabel, year: y, total });
+  }
+
+  return result;
+}
+
+/**
  * Calculate cost aggregation from service history.
  * @param {Array<object>} history
  * @returns {{total: number, perService: object}}
@@ -556,3 +589,4 @@ window.sortByPriority = sortByPriority;
 window.sortServices = sortServices;
 window.computeDailyAvgMileage = computeDailyAvgMileage;
 window.computeServiceForecast = computeServiceForecast;
+window.computeMonthlySpendTrends = computeMonthlySpendTrends;

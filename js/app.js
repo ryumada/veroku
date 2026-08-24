@@ -416,13 +416,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const serviceIndex = activeVeh.services.findIndex(s => s.id === id);
       if (serviceIndex !== -1) {
         const serviceName = activeVeh.services[serviceIndex].name;
-        if (confirm(`Are you sure you want to delete tracking for: ${serviceName}?`)) {
-          activeVeh.services.splice(serviceIndex, 1);
-          saveAppState(state);
-          window.componentsPage = 1;
-          renderAll(state);
-          showToast('Component removed.', 'success');
-        }
+        showCustomConfirmModal({
+          title: '🗑️ Delete Component Tracker',
+          message: `Are you sure you want to delete tracking for "${serviceName}"? This will remove all interval thresholds and tracking records for this part.`,
+          confirmText: 'Delete Tracker',
+          confirmClass: 'danger-btn',
+          headerClass: 'header-danger',
+          onConfirm: () => {
+            activeVeh.services.splice(serviceIndex, 1);
+            saveAppState(state);
+            window.componentsPage = 1;
+            renderAll(state);
+            triggerHaptic('light');
+            showToast('Component tracker deleted.', 'success');
+          }
+        });
       }
     }
   }
@@ -498,12 +506,20 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       e.preventDefault();
       const taskName = list[itemIndex].task;
-      if (confirm(`Remove task: "${taskName}"?`)) {
-        list.splice(itemIndex, 1);
-        saveAppState(state);
-        renderAll(state);
-        showToast('Checklist task removed.', 'success');
-      }
+      showCustomConfirmModal({
+        title: '🗑️ Delete Routine Task',
+        message: `Are you sure you want to delete "${taskName}" from your checklist?`,
+        confirmText: 'Delete Task',
+        confirmClass: 'danger-btn',
+        headerClass: 'header-danger',
+        onConfirm: () => {
+          list.splice(itemIndex, 1);
+          saveAppState(state);
+          renderAll(state);
+          triggerHaptic('light');
+          showToast('Checklist task removed.', 'success');
+        }
+      });
       return;
     }
 
@@ -761,10 +777,18 @@ document.addEventListener('DOMContentLoaded', () => {
     'btn-close-edit-vehicle', 'btn-cancel-edit-vehicle',
     'btn-cancel-delete-vehicle',
     'btn-close-routine-desc-view', 'btn-close-routine-desc-view-footer',
-    'btn-close-service-notes-view', 'btn-close-service-notes-view-footer'
+    'btn-close-service-notes-view', 'btn-close-service-notes-view-footer',
+    'btn-close-custom-confirm', 'btn-cancel-custom-confirm'
   ];
   modalCloseBtnIds.forEach(id => {
     document.getElementById(id)?.addEventListener('click', closeModal);
+  });
+
+  document.getElementById('btn-action-custom-confirm')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    if (typeof handleCustomConfirmAction === 'function') {
+      handleCustomConfirmAction();
+    }
   });
 
   // ==========================================================================
@@ -851,8 +875,91 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('btn-export-settings')?.addEventListener('click', exportData);
+  // Service History CSV Export
+  function exportServiceHistoryCSV() {
+    const activeVeh = getActiveVehicle(state);
+    const history = activeVeh.service_history || [];
+    if (history.length === 0) {
+      showToast('No service history records to export.', 'warning');
+      return;
+    }
+
+    const headers = ['Vehicle', 'Date', 'Component', 'Odometer (KM)', 'Cost (IDR)', 'Notes'];
+    const rows = history.map(item => {
+      const dateStr = item.service_date || (item.timestamp ? new Date(item.timestamp).toISOString().split('T')[0] : '');
+      const escape = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
+      return [
+        escape(activeVeh.name),
+        escape(dateStr),
+        escape(item.service_name),
+        item.odometer_at_service || 0,
+        item.cost || 0,
+        escape(item.notes || '')
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeVehName = (activeVeh.name || 'vehicle').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const dateStamp = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `veroku_service_log_${safeVehName}_${dateStamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    triggerHaptic('success');
+    showToast('Exported service log CSV spreadsheet.', 'success');
+  }
+
+  document.getElementById('btn-export-csv')?.addEventListener('click', exportServiceHistoryCSV);
+
+  // Auto Snapshot Restore Event Delegation
+  document.addEventListener('click', (e) => {
+    const restoreBtn = e.target.closest('.snapshot-restore-btn');
+    if (restoreBtn) {
+      const snapId = restoreBtn.getAttribute('data-snapshot-id');
+      const snapshots = typeof getAutoSnapshots === 'function' ? getAutoSnapshots() : [];
+      const snap = snapshots.find(s => s.id === snapId);
+      const timeLabel = snap ? snap.dateStr : 'this point in time';
+
+      showCustomConfirmModal({
+        title: '⏱️ Restore Auto-Snapshot',
+        message: `Restore vehicle data to the snapshot saved on ${timeLabel}? Any unsaved changes made since then will be reverted.`,
+        confirmText: 'Restore Snapshot',
+        confirmClass: 'submit-btn',
+        headerClass: 'header-warning',
+        onConfirm: () => {
+          const ok = typeof restoreAutoSnapshot === 'function' && restoreAutoSnapshot(snapId);
+          if (ok) {
+            state = getAppState();
+            renderAll(state);
+            triggerHaptic('success');
+            showToast('State successfully restored from snapshot!', 'success');
+          } else {
+            showToast('Failed to restore snapshot.', 'error');
+          }
+        }
+      });
+    }
+  });
+
+  document.getElementById('btn-export-settings')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    exportData();
+  });
+  document.getElementById('btn-share-settings')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    if (typeof shareData === 'function') {
+      shareData();
+    } else {
+      exportData();
+    }
+  });
   document.getElementById('btn-import-settings')?.addEventListener('click', () => {
+    triggerHaptic('light');
     document.getElementById('input-import')?.click();
   });
 
@@ -1101,13 +1208,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   confirmDeleteBtn?.addEventListener('click', () => {
-    const confirmPrompt = confirm('Are you absolutely sure you want to delete all data? This cannot be undone.');
-    if (confirmPrompt) {
-      state = resetAppState();
-      renderAll(state);
-      closeModal();
-      showToast('All browser data has been deleted.', 'success');
-    }
+    state = resetAppState();
+    renderAll(state);
+    closeModal();
+    triggerHaptic('success');
+    showToast('All browser data has been deleted.', 'success');
   });
 
   document.getElementById('btn-cancel-delete')?.addEventListener('click', closeModal);
@@ -1333,19 +1438,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   confirmDeleteVehicleBtn?.addEventListener('click', () => {
-    const confirmPrompt = confirm('Are you absolutely sure you want to delete this vehicle profile? This cannot be undone.');
-    if (confirmPrompt) {
-      const activeVeh = getActiveVehicle(state);
-      const name = activeVeh.name;
-      const success = deleteActiveVehicleProfile(state);
-      if (success) {
-        saveAppState(state);
-        renderAll(state);
-        closeModal();
-        showToast(`Vehicle profile "${name}" has been deleted.`, 'success');
-      } else {
-        showToast('Failed to delete vehicle profile.', 'error');
-      }
+    const activeVeh = getActiveVehicle(state);
+    const name = activeVeh.name;
+    const success = deleteActiveVehicleProfile(state);
+    if (success) {
+      saveAppState(state);
+      renderAll(state);
+      closeModal();
+      triggerHaptic('light');
+      showToast(`Vehicle profile "${name}" has been deleted.`, 'success');
+    } else {
+      showToast('Failed to delete vehicle profile.', 'error');
     }
   });
 

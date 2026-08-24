@@ -213,15 +213,90 @@ function getAppState() {
   }
 }
 
+const SNAPSHOTS_KEY = 'v_manager_snapshots_v1';
+const MAX_SNAPSHOTS = 5;
+
 /**
- * Save the application state to local storage.
+ * Save a rolling auto-snapshot of the app state.
+ * @param {object} state
+ * @param {string} [reason='State Update']
+ */
+function recordAutoSnapshot(state, reason = 'State Update') {
+  try {
+    const raw = localStorage.getItem(SNAPSHOTS_KEY);
+    let snapshots = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(snapshots)) snapshots = [];
+
+    const activeVeh = getActiveVehicle(state);
+    const snap = {
+      id: generateId('snp'),
+      timestamp: Date.now(),
+      dateStr: new Date().toLocaleString(),
+      reason,
+      vehicleName: activeVeh ? activeVeh.name : 'All Vehicles',
+      stateData: JSON.parse(JSON.stringify(state))
+    };
+
+    // Replace if last snapshot is less than 5 seconds old, else unshift
+    if (snapshots.length > 0 && Date.now() - snapshots[0].timestamp < 5000) {
+      snapshots[0] = snap;
+    } else {
+      snapshots.unshift(snap);
+    }
+
+    if (snapshots.length > MAX_SNAPSHOTS) {
+      snapshots = snapshots.slice(0, MAX_SNAPSHOTS);
+    }
+
+    localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(snapshots));
+  } catch (err) {
+    console.warn('Could not record auto snapshot:', err);
+  }
+}
+
+/**
+ * Get the list of saved auto-snapshots.
+ * @returns {Array<object>}
+ */
+function getAutoSnapshots() {
+  try {
+    const raw = localStorage.getItem(SNAPSHOTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Restore an auto-snapshot by ID.
+ * @param {string} snapshotId
+ * @returns {boolean}
+ */
+function restoreAutoSnapshot(snapshotId) {
+  try {
+    const snapshots = getAutoSnapshots();
+    const found = snapshots.find(s => s.id === snapshotId);
+    if (found && found.stateData) {
+      saveAppState(found.stateData);
+      return true;
+    }
+  } catch (err) {
+    console.error('Failed to restore snapshot:', err);
+  }
+  return false;
+}
+
+/**
+ * Save application state to localStorage.
  * @param {object} state
  */
 function saveAppState(state) {
-  if (!state || typeof state !== 'object') return;
-  state.meta = state.meta || {};
-  state.meta.last_updated_timestamp = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    recordAutoSnapshot(state);
+  } catch (e) {
+    console.error('Could not save state to localStorage', e);
+  }
 }
 
 /**
@@ -255,6 +330,56 @@ function exportData() {
 
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Share current app state JSON directly to other apps using Web Share API.
+ */
+async function shareData() {
+  const state = getAppState();
+  const jsonString = JSON.stringify(state, null, 2);
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const filename = `veroku-backup-${dateStr}.json`;
+
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const file = new File([blob], filename, { type: 'application/json' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: 'Veroku Vehicle Manager Backup',
+        text: `Veroku maintenance backup (${dateStr})`,
+        files: [file]
+      });
+      if (window.showToast) window.showToast('Backup shared successfully!', 'success');
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Share error:', err);
+      }
+      return;
+    }
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Veroku Vehicle Manager Backup',
+        text: jsonString
+      });
+      if (window.showToast) window.showToast('Backup shared successfully!', 'success');
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Text share error:', err);
+      }
+      return;
+    }
+  }
+
+  exportData();
+  if (window.showToast) window.showToast('Sharing not supported on this browser. Backup downloaded instead.', 'info');
 }
 
 /**
@@ -344,3 +469,8 @@ function markServiceDone(serviceId, cost, notes, serviceDate) {
     saveAppState(state);
   }
 }
+
+// Window exports
+window.getAutoSnapshots = getAutoSnapshots;
+window.restoreAutoSnapshot = restoreAutoSnapshot;
+window.shareData = shareData;

@@ -921,7 +921,7 @@ function renderNotifications(state) {
         <div class="alert-content">
           <div class="alert-icon">${icon}</div>
           <div class="alert-text">
-            <h4>${icon} Part Tracker ${badgeText}: ${item.name}</h4>
+            <h4>Part Tracker ${badgeText}: ${item.name}</h4>
             <p>${alertMsg}</p>
           </div>
         </div>
@@ -941,7 +941,7 @@ function renderNotifications(state) {
         <div class="alert-content">
           <div class="alert-icon">${item.icon}</div>
           <div class="alert-text">
-            <h4>🚨 Routine Check Due: ${item.title}</h4>
+            <h4>Routine Check Due: ${item.title}</h4>
             <p>${item.message}</p>
           </div>
         </div>

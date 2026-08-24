@@ -147,7 +147,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 </div>
                 <div class="form-group">
                   <label for="add-warning-threshold">Warning Threshold (KM)</label>
-                  <input type="number" id="add-warning-threshold" min="0" placeholder="e.g., 3800">
+                  <input type="number" id="add-warning-threshold" min="0" placeholder="e.g., 3500 or 8789">
                 </div>
               </div>
 
@@ -160,6 +160,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                   <label for="add-interval-time-unit">Unit</label>
                   <select id="add-interval-time-unit">
                     <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
                     <option value="months" selected>Months</option>
                     <option value="years">Years</option>
                   </select>
@@ -168,14 +169,15 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
               <div class="form-group-row-2">
                 <div class="form-group">
-                  <label for="add-warning-time-val">Warning (Time Remain)</label>
-                  <input type="number" id="add-warning-time-val" min="1" placeholder="e.g., 15">
+                  <label for="add-warning-time-val">Warning (Time Milestone)</label>
+                  <input type="number" id="add-warning-time-val" min="1" placeholder="e.g., 5">
                 </div>
                 <div class="form-group">
                   <label for="add-warning-time-unit">Unit</label>
                   <select id="add-warning-time-unit">
-                    <option value="days" selected>Days</option>
-                    <option value="months">Months</option>
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months" selected>Months</option>
                     <option value="years">Years</option>
                   </select>
                 </div>
@@ -612,6 +614,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             <label for="edit-interval-time-unit">Unit</label>
             <select id="edit-interval-time-unit">
               <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
               <option value="months">Months</option>
               <option value="years">Years</option>
             </select>
@@ -620,13 +623,14 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
         <div class="form-group-row-2">
           <div class="form-group">
-            <label for="edit-warning-time-val">Warning (Time Remain)</label>
+            <label for="edit-warning-time-val">Warning (Time Milestone)</label>
             <input type="number" id="edit-warning-time-val" min="1">
           </div>
           <div class="form-group">
             <label for="edit-warning-time-unit">Unit</label>
             <select id="edit-warning-time-unit">
               <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
               <option value="months">Months</option>
               <option value="years">Years</option>
             </select>

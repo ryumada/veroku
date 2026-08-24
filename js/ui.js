@@ -142,18 +142,11 @@ function renderServiceCards(enrichedServices, activeVeh) {
     const isWarning = s.status.cssClass === 'status--warning';
 
     const deltaText = s.displayDeltaText;
+    const forecast = computeServiceForecast(s, avgMileage);
 
-    let forecastHtml = '';
-    if (s.deltaRemainingKm !== null && s.deltaRemainingKm <= 0) {
-      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due (KM)! Service immediately.</div>`;
-    } else if (s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0) {
-      forecastHtml = `<div class="forecast-label" style="color: var(--status-critical);">🚨 Past due (Time)! Service immediately.</div>`;
-    } else if (avgMileage > 0 && s.deltaRemainingKm !== null && s.deltaRemainingKm > 0) {
-      const daysUntil = Math.max(0, Math.ceil(s.deltaRemainingKm / avgMileage));
-      forecastHtml = `<div class="forecast-label">⏳ Est. ${daysUntil} days remaining (~${avgMileage} KM/day)</div>`;
-    } else {
-      forecastHtml = `<div class="forecast-label">⏳ Forecast requires at least 2 odometer readings</div>`;
-    }
+    const forecastHtml = forecast.isOverdue
+      ? `<div class="forecast-label" style="color: var(--status-critical);">${forecast.message}</div>`
+      : `<div class="forecast-label">${forecast.message}</div>`;
 
     let intervalText = '';
     if (s.interval_km && s.interval_time_val) {
@@ -686,8 +679,10 @@ function renderNotifications(state) {
   const due = checkReminders(state);
 
   // Calculate warning/critical parts
-  const currentOdo = state.meta?.current_odometer || 0;
-  const enriched = computeAllServices(state.services || [], currentOdo);
+  const activeVeh = (state && state.vehicles) ? getActiveVehicle(state) : state;
+  const services = activeVeh?.services || [];
+  const currentOdo = activeVeh?.meta?.current_odometer || 0;
+  const enriched = computeAllServices(services, currentOdo);
   const partAlerts = enriched.filter(s => s.status.cssClass === 'status--critical' || s.status.cssClass === 'status--warning');
 
   if (due.length === 0 && partAlerts.length === 0) {
@@ -705,10 +700,26 @@ function renderNotifications(state) {
     const badgeText = isCritical ? 'OVERDUE' : 'DUE SOON';
 
     let alertMsg = '';
-    if (item.deltaRemaining <= 0) {
-      alertMsg = `${item.name} is ${Math.abs(item.deltaRemaining)} KM overdue (Target: ${item.interval_km} KM).`;
+    if (isCritical) {
+      if (item.deltaRemainingKm !== null && item.deltaRemainingKm <= 0 && item.deltaRemainingDays !== null && item.deltaRemainingDays <= 0) {
+        alertMsg = `${item.name} is ${Math.abs(item.deltaRemainingKm)} KM and ${Math.abs(item.deltaRemainingDays)} days overdue!`;
+      } else if (item.deltaRemainingKm !== null && item.deltaRemainingKm <= 0) {
+        alertMsg = `${item.name} is ${Math.abs(item.deltaRemainingKm)} KM overdue (Target: ${item.nextOdometer} KM).`;
+      } else if (item.deltaRemainingDays !== null && item.deltaRemainingDays <= 0) {
+        alertMsg = `${item.name} is ${Math.abs(item.deltaRemainingDays)} days overdue (Due: ${item.nextDueDate}).`;
+      } else {
+        alertMsg = `${item.name} is overdue for scheduled maintenance.`;
+      }
     } else {
-      alertMsg = `${item.name} has only ${item.deltaRemaining} KM remaining before target interval (${item.interval_km} KM).`;
+      if (item.deltaRemainingKm !== null && item.deltaRemainingDays !== null) {
+        alertMsg = `${item.name} is due soon: ${item.deltaRemainingKm} KM / ${item.deltaRemainingDays} days remaining before target.`;
+      } else if (item.deltaRemainingKm !== null) {
+        alertMsg = `${item.name} is due soon: only ${item.deltaRemainingKm} KM remaining before target (${item.nextOdometer} KM).`;
+      } else if (item.deltaRemainingDays !== null) {
+        alertMsg = `${item.name} is due soon: only ${item.deltaRemainingDays} days remaining (Due: ${item.nextDueDate}).`;
+      } else {
+        alertMsg = `${item.name} is approaching its scheduled maintenance interval.`;
+      }
     }
 
     html += `

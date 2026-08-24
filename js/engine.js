@@ -26,13 +26,44 @@ function computeRemainingDelta(currentOdometer, nextOdometer) {
 }
 
 /**
+ * Calculate the remaining distance margin at which the warning status triggers.
+ * Supports both milestone distance (e.g. 3500 KM on a 4000 KM interval -> 500 KM remaining)
+ * and absolute odometer reading (e.g. 8789 KM target on 9000 KM next odometer -> 211 KM remaining).
+ * @param {number} warningThreshold
+ * @param {number} intervalKm
+ * @param {number} [nextOdometer]
+ * @param {number} [lastServiceOdo]
+ * @returns {number} warnMarginKm
+ */
+function computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, lastServiceOdo) {
+  if (typeof warningThreshold !== 'number' || warningThreshold <= 0) {
+    return (intervalKm && intervalKm < 2000) ? Math.max(10, Math.round(intervalKm * 0.1)) : 200;
+  }
+
+  // Case A: Absolute odometer threshold (e.g. 8789 KM when nextOdometer is 9000 KM)
+  if (nextOdometer && warningThreshold > (lastServiceOdo || 0) && warningThreshold < nextOdometer) {
+    return nextOdometer - warningThreshold;
+  }
+
+  // Case B: Milestone within interval (e.g. 3500 KM on 4000 KM interval -> 500 KM remaining)
+  if (intervalKm && warningThreshold < intervalKm) {
+    return intervalKm - warningThreshold;
+  }
+
+  // Fallback: Default 200 KM if threshold is equal to or exceeds target
+  return 200;
+}
+
+/**
  * Classify the remaining delta into a functional status category.
  * @param {number} deltaRemaining
  * @param {number} intervalKm
- * @param {number} [warningThreshold] e.g. warn at 3000 KM for a 3500 KM target
+ * @param {number} [warningThreshold]
+ * @param {number} [nextOdometer]
+ * @param {number} [lastServiceOdometer]
  * @returns {{label: string, emoji: string, cssClass: string}}
  */
-function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
+function classifyStatus(deltaRemaining, intervalKm, warningThreshold, nextOdometer, lastServiceOdometer) {
   if (deltaRemaining <= 0) {
     return {
       label: '🚨 OVERDUE!',
@@ -41,9 +72,7 @@ function classifyStatus(deltaRemaining, intervalKm, warningThreshold) {
     };
   }
 
-  const warningLimit = warningThreshold !== undefined && warningThreshold > 0
-    ? Math.max(0, intervalKm - warningThreshold)
-    : 200;
+  const warningLimit = computeKmWarningMargin(warningThreshold, intervalKm, nextOdometer, lastServiceOdometer);
 
   if (deltaRemaining <= warningLimit) {
     return {
@@ -73,6 +102,8 @@ function addTimeToDate(dateStr, value, unit) {
   const val = Number(value) || 0;
   if (unit === 'days') {
     d.setDate(d.getDate() + val);
+  } else if (unit === 'weeks') {
+    d.setDate(d.getDate() + val * 7);
   } else if (unit === 'months') {
     d.setMonth(d.getMonth() + val);
   } else if (unit === 'years') {
@@ -82,17 +113,28 @@ function addTimeToDate(dateStr, value, unit) {
 }
 
 /**
+ * Convert time value and unit into approximate calendar days.
+ * @param {number} value
+ * @param {string} unit
+ * @returns {number}
+ */
+function convertToDays(value, unit) {
+  const val = Number(value) || 0;
+  if (unit === 'days') return val;
+  if (unit === 'weeks') return val * 7;
+  if (unit === 'months') return val * 30;
+  if (unit === 'years') return val * 365;
+  return val;
+}
+
+/**
  * Get approximate number of warning days for time thresholds.
  * @param {number} value
  * @param {string} unit
  * @returns {number}
  */
 function getWarningDays(value, unit) {
-  const val = Number(value) || 0;
-  if (unit === 'days') return val;
-  if (unit === 'months') return val * 30;
-  if (unit === 'years') return val * 365;
-  return 7; // Default warning 7 days
+  return convertToDays(value, unit) || 7;
 }
 
 /**
@@ -125,9 +167,12 @@ function computeAllServices(services, currentOdometer) {
       if (deltaRemainingKm <= 0) {
         kmStatus = 'status--critical';
       } else {
-        const warnLimitKm = service.warning_threshold !== undefined && service.warning_threshold > 0
-          ? Math.max(0, Number(service.interval_km) - Number(service.warning_threshold))
-          : 200;
+        const warnLimitKm = computeKmWarningMargin(
+          service.warning_threshold,
+          service.interval_km,
+          nextOdometer,
+          service.last_service_odometer
+        );
         if (deltaRemainingKm <= warnLimitKm) {
           kmStatus = 'status--warning';
         }
@@ -156,12 +201,25 @@ function computeAllServices(services, currentOdometer) {
       if (deltaRemainingDays <= 0) {
         dateStatus = 'status--critical';
       } else {
-        let warnLimitDays = 7; // Default 7 days
+        // Evaluate warning milestone date
         if (typeof service.warning_time_val === 'number' && service.warning_time_val > 0) {
-          warnLimitDays = getWarningDays(service.warning_time_val, service.warning_time_unit);
-        }
-        if (deltaRemainingDays <= warnLimitDays) {
-          dateStatus = 'status--warning';
+          const warnDate = addTimeToDate(lastDateStr, service.warning_time_val, service.warning_time_unit);
+          warnDate.setHours(0, 0, 0, 0);
+          if (warnDate < nextDueDate) {
+            if (today.getTime() >= warnDate.getTime()) {
+              dateStatus = 'status--warning';
+            }
+          } else {
+            const defaultMarginDays = Math.min(30, Math.max(1, Math.round(convertToDays(service.interval_time_val, service.interval_time_unit) * 0.1))) || 7;
+            if (deltaRemainingDays <= defaultMarginDays) {
+              dateStatus = 'status--warning';
+            }
+          }
+        } else {
+          const defaultMarginDays = Math.min(30, Math.max(1, Math.round(convertToDays(service.interval_time_val, service.interval_time_unit) * 0.1))) || 7;
+          if (deltaRemainingDays <= defaultMarginDays) {
+            dateStatus = 'status--warning';
+          }
         }
       }
     }
@@ -182,17 +240,27 @@ function computeAllServices(services, currentOdometer) {
     let sortMetric = 999999;
 
     if (deltaRemainingKm !== null && deltaRemainingDays !== null) {
-      // Both active: compare ratio of remaining values to see which limit is tighter
-      const kmRatio = deltaRemainingKm / (Number(service.interval_km) || 1);
-      const approxDaysInterval = service.interval_time_val ? getWarningDays(service.interval_time_val, service.interval_time_unit) : 30;
-      const daysRatio = deltaRemainingDays / (approxDaysInterval || 1);
-
-      if (kmRatio < daysRatio) {
-        displayDeltaText = deltaRemainingKm <= 0 ? `${Math.abs(deltaRemainingKm)} KM OVERDUE` : `${deltaRemainingKm} KM Remaining`;
+      if (deltaRemainingKm <= 0 && deltaRemainingDays <= 0) {
+        displayDeltaText = `${Math.abs(deltaRemainingKm)} KM / ${Math.abs(deltaRemainingDays)} days OVERDUE`;
+        sortMetric = Math.min(deltaRemainingKm, deltaRemainingDays * 10);
+      } else if (deltaRemainingKm <= 0) {
+        displayDeltaText = `${Math.abs(deltaRemainingKm)} KM OVERDUE`;
         sortMetric = deltaRemainingKm;
-      } else {
-        displayDeltaText = deltaRemainingDays <= 0 ? `${Math.abs(deltaRemainingDays)} days OVERDUE` : `${deltaRemainingDays} days Remaining`;
+      } else if (deltaRemainingDays <= 0) {
+        displayDeltaText = `${Math.abs(deltaRemainingDays)} days OVERDUE`;
         sortMetric = deltaRemainingDays * 10;
+      } else {
+        const kmRatio = deltaRemainingKm / (Number(service.interval_km) || 1);
+        const totalIntervalDays = convertToDays(service.interval_time_val, service.interval_time_unit) || 30;
+        const daysRatio = deltaRemainingDays / totalIntervalDays;
+
+        if (kmRatio <= daysRatio) {
+          displayDeltaText = `${deltaRemainingKm} KM Remaining`;
+          sortMetric = deltaRemainingKm;
+        } else {
+          displayDeltaText = `${deltaRemainingDays} days Remaining`;
+          sortMetric = deltaRemainingDays * 10;
+        }
       }
     } else if (deltaRemainingKm !== null) {
       displayDeltaText = deltaRemainingKm <= 0 ? `${Math.abs(deltaRemainingKm)} KM OVERDUE` : `${deltaRemainingKm} KM Remaining`;
@@ -267,6 +335,7 @@ function computeCostSummary(history) {
 
 /**
  * Compute average daily mileage based on odometer history.
+ * Filters uncalibrated zero readings and requires sufficient time delta.
  * @param {Array<object>} log
  * @returns {number} Average daily km
  */
@@ -274,7 +343,18 @@ function computeDailyAvgMileage(log) {
   if (!Array.isArray(log) || log.length < 2) return 0;
 
   // Sort log by timestamp ascending
-  const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp);
+  let sorted = [...log]
+    .filter(item => typeof item.odometer === 'number' && item.timestamp)
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  if (sorted.length < 2) return 0;
+
+  // If first entry is an uncalibrated 0 baseline followed by actual readings, skip it
+  if (sorted[0].odometer === 0 && sorted[1].odometer > 50) {
+    sorted = sorted.slice(1);
+    if (sorted.length < 2) return 0;
+  }
+
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
 
@@ -282,9 +362,100 @@ function computeDailyAvgMileage(log) {
   const timeDiffMs = last.timestamp - first.timestamp;
   const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24);
 
-  if (timeDiffDays < 0.1 || odoDiff <= 0) return 0;
+  // Require at least 6 hours (0.25 days) elapsed for a reliable daily rate
+  if (timeDiffDays < 0.25 || odoDiff <= 0) return 0;
 
-  return Number((odoDiff / timeDiffDays).toFixed(1));
+  const rate = odoDiff / timeDiffDays;
+  return Number(Math.min(2000, rate).toFixed(1));
+}
+
+/**
+ * Compute the remaining days forecast and human-readable explanation for a service.
+ * @param {object} s Enriched service object
+ * @param {number} avgMileage Daily average mileage (KM/day)
+ * @returns {{days: number|null, message: string, isOverdue: boolean, type: 'km'|'time'|'both'|'none'}}
+ */
+function computeServiceForecast(s, avgMileage) {
+  const isKmOverdue = s.deltaRemainingKm !== null && s.deltaRemainingKm <= 0;
+  const isTimeOverdue = s.deltaRemainingDays !== null && s.deltaRemainingDays <= 0;
+
+  // 1. Overdue cases
+  if (isKmOverdue && isTimeOverdue) {
+    return {
+      days: 0,
+      message: `🚨 Overdue by ${Math.abs(s.deltaRemainingKm)} KM & ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
+      isOverdue: true,
+      type: 'both'
+    };
+  }
+  if (isKmOverdue) {
+    return {
+      days: 0,
+      message: `🚨 Past due by ${Math.abs(s.deltaRemainingKm)} KM! Service immediately.`,
+      isOverdue: true,
+      type: 'km'
+    };
+  }
+  if (isTimeOverdue) {
+    return {
+      days: 0,
+      message: `🚨 Past due by ${Math.abs(s.deltaRemainingDays)} days! Service immediately.`,
+      isOverdue: true,
+      type: 'time'
+    };
+  }
+
+  // 2. Not overdue - calculate estimated days remaining
+  const daysFromKm = (avgMileage > 0 && s.deltaRemainingKm !== null && s.deltaRemainingKm > 0)
+    ? Math.ceil(s.deltaRemainingKm / avgMileage)
+    : null;
+  const daysFromTime = (s.deltaRemainingDays !== null && s.deltaRemainingDays > 0)
+    ? s.deltaRemainingDays
+    : null;
+
+  if (daysFromKm !== null && daysFromTime !== null) {
+    if (daysFromKm <= daysFromTime) {
+      return {
+        days: daysFromKm,
+        message: `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day, based on mileage)`,
+        isOverdue: false,
+        type: 'km'
+      };
+    } else {
+      return {
+        days: daysFromTime,
+        message: `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate}, based on time)`,
+        isOverdue: false,
+        type: 'time'
+      };
+    }
+  }
+
+  if (daysFromKm !== null) {
+    return {
+      days: daysFromKm,
+      message: `⏳ Est. ${daysFromKm} days remaining (~${avgMileage} KM/day)`,
+      isOverdue: false,
+      type: 'km'
+    };
+  }
+
+  if (daysFromTime !== null) {
+    return {
+      days: daysFromTime,
+      message: `⏳ Est. ${daysFromTime} days remaining (Due ${s.nextDueDate})`,
+      isOverdue: false,
+      type: 'time'
+    };
+  }
+
+  // KM only and no avgMileage available
+  return {
+    days: null,
+    message: `⏳ Forecast requires more odometer logs (~0 KM/day)`,
+    isOverdue: false,
+    type: 'none'
+  };
 }
 
 /**

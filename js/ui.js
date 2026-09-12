@@ -507,7 +507,11 @@ function renderServiceTable(state) {
   const componentsQuery = window.componentsSearchQuery || '';
   const filteredEnriched = enriched.filter(s => matchesServiceQuery(s, componentsQuery));
 
-  const sortedEnriched = sortServices(filteredEnriched, window.componentsSortMode || 'default');
+  const sortedEnriched = sortServices(
+    filteredEnriched,
+    window.componentsSortMode || 'default',
+    !!window.componentsSortReversed
+  );
 
   // Pagination setup
   window.componentsPage = window.componentsPage || 1;
@@ -1059,7 +1063,11 @@ function renderAll(state) {
   const dashboardQuery = window.dashboardSearchQuery || '';
   const filteredEnriched = enriched.filter(s => matchesServiceQuery(s, dashboardQuery));
 
-  const sorted = sortServices(filteredEnriched, window.dashboardSortMode || 'priority');
+  const sorted = sortServices(
+    filteredEnriched,
+    window.dashboardSortMode || 'priority',
+    !!window.dashboardSortReversed
+  );
 
   renderServiceCards(sorted, activeVeh);
   renderServiceTable(scopedState);

@@ -513,70 +513,74 @@ function computeStreakUpdate(meta, dailyChecks) {
 }
 
 /**
- * Sort services by the specified criteria.
+ * Sort services by the specified criteria with optional reversal.
  * @param {Array<object>} services
  * @param {string} criteria
+ * @param {boolean} [reversed=false]
  * @returns {Array<object>}
  */
-function sortServices(services, criteria) {
+function sortServices(services, criteria, reversed = false) {
   if (!Array.isArray(services)) return [];
   const list = [...services];
 
+  let result;
   if (criteria === 'priority') {
-    return sortByPriority(list);
+    result = sortByPriority(list);
+  } else {
+    result = list.sort((a, b) => {
+      switch (criteria) {
+        case 'name': {
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        }
+        case 'interval_km': {
+          const valA = typeof a.interval_km === 'number' && a.interval_km > 0 ? a.interval_km : Infinity;
+          const valB = typeof b.interval_km === 'number' && b.interval_km > 0 ? b.interval_km : Infinity;
+          if (valA === Infinity && valB === Infinity) return 0;
+          if (valA === Infinity) return 1;
+          if (valB === Infinity) return -1;
+          return valA - valB;
+        }
+        case 'next_due_km': {
+          const valA = a.nextOdometer !== null && a.nextOdometer !== undefined ? a.nextOdometer : Infinity;
+          const valB = b.nextOdometer !== null && b.nextOdometer !== undefined ? b.nextOdometer : Infinity;
+          if (valA === Infinity && valB === Infinity) return 0;
+          if (valA === Infinity) return 1;
+          if (valB === Infinity) return -1;
+          return valA - valB;
+        }
+        case 'next_due_date': {
+          const valA = a.nextDueDate ? new Date(a.nextDueDate).getTime() : Infinity;
+          const valB = b.nextDueDate ? new Date(b.nextDueDate).getTime() : Infinity;
+          if (valA === Infinity && valB === Infinity) return 0;
+          if (valA === Infinity) return 1;
+          if (valB === Infinity) return -1;
+          return valA - valB;
+        }
+        case 'last_service_km': {
+          const valA = typeof a.last_service_odometer === 'number' ? a.last_service_odometer : -Infinity;
+          const valB = typeof b.last_service_odometer === 'number' ? b.last_service_odometer : -Infinity;
+          if (valA === -Infinity && valB === -Infinity) return 0;
+          if (valA === -Infinity) return 1;
+          if (valB === -Infinity) return -1;
+          return valB - valA;
+        }
+        case 'last_service_date': {
+          const valA = a.last_service_date ? new Date(a.last_service_date).getTime() : -Infinity;
+          const valB = b.last_service_date ? new Date(b.last_service_date).getTime() : -Infinity;
+          if (valA === -Infinity && valB === -Infinity) return 0;
+          if (valA === -Infinity) return 1;
+          if (valB === -Infinity) return -1;
+          return valB - valA;
+        }
+        default:
+          return 0; // Default / Unsorted (creation order)
+      }
+    });
   }
 
-  return list.sort((a, b) => {
-    switch (criteria) {
-      case 'name': {
-        const nameA = (a.name || '').toLowerCase();
-        const nameB = (b.name || '').toLowerCase();
-        return nameA.localeCompare(nameB);
-      }
-      case 'interval_km': {
-        const valA = typeof a.interval_km === 'number' && a.interval_km > 0 ? a.interval_km : Infinity;
-        const valB = typeof b.interval_km === 'number' && b.interval_km > 0 ? b.interval_km : Infinity;
-        if (valA === Infinity && valB === Infinity) return 0;
-        if (valA === Infinity) return 1;
-        if (valB === Infinity) return -1;
-        return valA - valB;
-      }
-      case 'next_due_km': {
-        const valA = a.nextOdometer !== null && a.nextOdometer !== undefined ? a.nextOdometer : Infinity;
-        const valB = b.nextOdometer !== null && b.nextOdometer !== undefined ? b.nextOdometer : Infinity;
-        if (valA === Infinity && valB === Infinity) return 0;
-        if (valA === Infinity) return 1;
-        if (valB === Infinity) return -1;
-        return valA - valB;
-      }
-      case 'next_due_date': {
-        const valA = a.nextDueDate ? new Date(a.nextDueDate).getTime() : Infinity;
-        const valB = b.nextDueDate ? new Date(b.nextDueDate).getTime() : Infinity;
-        if (valA === Infinity && valB === Infinity) return 0;
-        if (valA === Infinity) return 1;
-        if (valB === Infinity) return -1;
-        return valA - valB;
-      }
-      case 'last_service_km': {
-        const valA = typeof a.last_service_odometer === 'number' ? a.last_service_odometer : -Infinity;
-        const valB = typeof b.last_service_odometer === 'number' ? b.last_service_odometer : -Infinity;
-        if (valA === -Infinity && valB === -Infinity) return 0;
-        if (valA === -Infinity) return 1;
-        if (valB === -Infinity) return -1;
-        return valB - valA;
-      }
-      case 'last_service_date': {
-        const valA = a.last_service_date ? new Date(a.last_service_date).getTime() : -Infinity;
-        const valB = b.last_service_date ? new Date(b.last_service_date).getTime() : -Infinity;
-        if (valA === -Infinity && valB === -Infinity) return 0;
-        if (valA === -Infinity) return 1;
-        if (valB === -Infinity) return -1;
-        return valB - valA;
-      }
-      default:
-        return 0; // Default / Unsorted (creation order)
-    }
-  });
+  return reversed ? result.reverse() : result;
 }
 
 /**

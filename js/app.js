@@ -19,18 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize sorting and pagination preferences from localStorage
   window.dashboardSortMode = localStorage.getItem('v_dashboard_sort_mode') || 'priority';
+  window.dashboardSortReversed = localStorage.getItem('v_dashboard_sort_reversed') === 'true';
   window.dashboardPage = 1;
   window.dashboardPerPage = parseInt(localStorage.getItem('v_dashboard_per_page'), 10) || 12;
   window.componentsSortMode = localStorage.getItem('v_components_sort_mode') || 'default';
+  window.componentsSortReversed = localStorage.getItem('v_components_sort_reversed') === 'true';
   window.componentsPage = 1;
   window.componentsPerPage = parseInt(localStorage.getItem('v_components_per_page'), 10) || 10;
   window.dashboardSearchQuery = '';
   window.componentsSearchQuery = '';
 
-  // Sync sort select element dropdown values
+  // Sync sort select element dropdown values and direction button states
   const dashboardSortSelect = document.getElementById('select-dashboard-sort');
   if (dashboardSortSelect) {
     dashboardSortSelect.value = window.dashboardSortMode;
+  }
+  const dashboardSortRevBtn = document.getElementById('btn-dashboard-sort-reverse');
+  if (dashboardSortRevBtn) {
+    dashboardSortRevBtn.classList.toggle('active', window.dashboardSortReversed);
+    dashboardSortRevBtn.title = window.dashboardSortReversed ? 'Sort Order: Reversed (Click to normal)' : 'Sort Order: Normal (Click to reverse)';
+    const icon = dashboardSortRevBtn.querySelector('.sort-dir-icon');
+    if (icon) icon.textContent = window.dashboardSortReversed ? '⬆️' : '⬇️';
   }
   const dashboardPerPageSelect = document.getElementById('select-dashboard-per-page');
   if (dashboardPerPageSelect) {
@@ -39,6 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const componentsSortSelect = document.getElementById('select-components-sort');
   if (componentsSortSelect) {
     componentsSortSelect.value = window.componentsSortMode;
+  }
+  const componentsSortRevBtn = document.getElementById('btn-components-sort-reverse');
+  if (componentsSortRevBtn) {
+    componentsSortRevBtn.classList.toggle('active', window.componentsSortReversed);
+    componentsSortRevBtn.title = window.componentsSortReversed ? 'Sort Order: Reversed (Click to normal)' : 'Sort Order: Normal (Click to reverse)';
+    const icon = componentsSortRevBtn.querySelector('.sort-dir-icon');
+    if (icon) icon.textContent = window.componentsSortReversed ? '⬆️' : '⬇️';
   }
   const componentsPerPageSelect = document.getElementById('select-components-per-page');
   if (componentsPerPageSelect) {
@@ -164,6 +180,20 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll(state);
   });
 
+  document.getElementById('btn-dashboard-sort-reverse')?.addEventListener('click', () => {
+    window.dashboardSortReversed = !window.dashboardSortReversed;
+    localStorage.setItem('v_dashboard_sort_reversed', String(window.dashboardSortReversed));
+    const btn = document.getElementById('btn-dashboard-sort-reverse');
+    if (btn) {
+      btn.classList.toggle('active', window.dashboardSortReversed);
+      btn.title = window.dashboardSortReversed ? 'Sort Order: Reversed (Click to normal)' : 'Sort Order: Normal (Click to reverse)';
+      const icon = btn.querySelector('.sort-dir-icon');
+      if (icon) icon.textContent = window.dashboardSortReversed ? '⬆️' : '⬇️';
+    }
+    window.dashboardPage = 1;
+    renderAll(state);
+  });
+
   document.getElementById('select-dashboard-per-page')?.addEventListener('change', (e) => {
     window.dashboardPerPage = parseInt(e.target.value, 10);
     localStorage.setItem('v_dashboard_per_page', e.target.value);
@@ -186,6 +216,20 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('select-components-sort')?.addEventListener('change', (e) => {
     window.componentsSortMode = e.target.value;
     localStorage.setItem('v_components_sort_mode', e.target.value);
+    window.componentsPage = 1;
+    renderAll(state);
+  });
+
+  document.getElementById('btn-components-sort-reverse')?.addEventListener('click', () => {
+    window.componentsSortReversed = !window.componentsSortReversed;
+    localStorage.setItem('v_components_sort_reversed', String(window.componentsSortReversed));
+    const btn = document.getElementById('btn-components-sort-reverse');
+    if (btn) {
+      btn.classList.toggle('active', window.componentsSortReversed);
+      btn.title = window.componentsSortReversed ? 'Sort Order: Reversed (Click to normal)' : 'Sort Order: Normal (Click to reverse)';
+      const icon = btn.querySelector('.sort-dir-icon');
+      if (icon) icon.textContent = window.componentsSortReversed ? '⬆️' : '⬇️';
+    }
     window.componentsPage = 1;
     renderAll(state);
   });

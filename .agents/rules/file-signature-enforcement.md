@@ -39,13 +39,21 @@ description: Use when creating new files or editing file headers. Defines the ma
 * **Line 6:** ` */`
 
 **E. Markdown / Documentation (`.md`)**
-* *Use YAML Frontmatter style to ensure metadata is machine-readable yet visually clean.*
-* **Line 1:** `---`
-* **Line 2:** `title: <Document Title or Filename>`
-* **Line 3:** `category: <Guide|Architecture|Reference|Log>`
-* **Line 4:** `description: <Concise summary of this document>`
-* **Line 5:** `context: <Related Module or Scope>`
-* **Line 6:** `---`
+* *Use YAML Frontmatter style to ensure metadata is machine-readable. For public documentation (such as `README.md`), wrap in HTML comments (`<!-- ... -->`) so the metadata is hidden from rendered Markdown views.*
+* **Standard Frontmatter (Internal Docs):**
+  * **Line 1:** `---`
+  * **Line 2:** `title: <Document Title or Filename>`
+  * **Line 3:** `category: <Guide|Architecture|Reference|Log>`
+  * **Line 4:** `description: <Concise summary of this document>`
+  * **Line 5:** `context: <Related Module or Scope>`
+  * **Line 6:** `---`
+* **Hidden Frontmatter (Public / Reader-Facing Docs like `README.md`):**
+  * **Line 1:** `<!--`
+  * **Line 2:** `title: <Document Title or Filename>`
+  * **Line 3:** `category: <Guide|Architecture|Reference|Log>`
+  * **Line 4:** `description: <Concise summary of this document>`
+  * **Line 5:** `context: <Related Module or Scope>`
+  * **Line 6:** `-->`
 
 **F. Configuration Files (`.yml`, `.yaml`, `.conf`, `.env.example`)**
 * **Line 1:** `# Category: <Config|Orchestration|Environment>`

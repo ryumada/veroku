@@ -1,9 +1,9 @@
----
+<!--
 title: README.md
 category: Reference
 description: Project overview, features, architecture, and usage guide for Veroku
 context: Root Repository
----
+-->
 
 # ⚙️ VEROKU — Vehicle Degradation Tracker
 

@@ -466,9 +466,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const notesBtn = e.target.closest('.tracker-notes-btn');
+      const notesBtn = e.target.closest('.tracker-notes-btn') || e.target.closest('.btn-view-service-notes');
       if (notesBtn) {
-        const serviceId = notesBtn.getAttribute('data-service-id');
+        const serviceId = notesBtn.getAttribute('data-id') || notesBtn.getAttribute('data-service-id');
         const activeVeh = getActiveVehicle(state);
         const service = activeVeh.services.find(s => s.id === serviceId);
         if (service && service.notes) {

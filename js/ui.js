@@ -407,7 +407,7 @@ function renderServiceCards(enrichedServices, activeVeh) {
 
         <div class="tracker-actions">
           ${s.notes ? `
-            <button class="tracker-notes-btn btn-view-service-notes" data-id="${s.id}">
+            <button class="tracker-notes-btn btn-view-service-notes" data-id="${s.id}" data-service-id="${s.id}">
               <span>📝</span> View Notes
             </button>
           ` : ''}

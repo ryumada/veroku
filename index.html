@@ -169,8 +169,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Schema Registration Form -->
           <div class="card form-card">
-            <h3>Add Maintenance Item</h3>
-            <p class="form-desc">Register a component to track its degradation cycle.</p>
+            <div class="card-header-titles">
+              <h3>Add Maintenance Item</h3>
+              <p class="form-desc">Register a component to track its degradation cycle.</p>
+            </div>
 
             <form id="form-add-service">
               <div class="form-group">
@@ -327,8 +329,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 
           <!-- Cost Summary Card -->
           <div class="card cost-summary-card">
-            <h3>Cost Summary</h3>
-            <p class="form-desc">Total spending on vehicle maintenance.</p>
+            <div class="card-header-titles">
+              <h3>Cost Summary</h3>
+              <p class="form-desc">Total spending on vehicle maintenance.</p>
+            </div>
 
             <!-- Cost Summary Filter & Date Controls -->
             <div class="history-nav-bar cost-nav-bar">
@@ -357,7 +361,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <!-- Service History Card -->
           <div class="card service-history-card">
             <div class="service-history-header-wrap">
-              <div>
+              <div class="card-header-titles">
                 <h3>Service Log History</h3>
                 <p class="form-desc">Logs of completed services and inspections.</p>
               </div>
@@ -384,7 +388,6 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
                 <button type="button" id="btn-history-now" class="nav-btn-sm btn-now">Now</button>
               </div>
             </div>
-
             <div class="scrollable-y">
               <div id="service-history-list" class="history-timeline-list">
                 <!-- Dynamically populated service history list -->
@@ -395,7 +398,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <!-- Refuel & Fuel Economy Log Card -->
           <div class="card fuel-history-card">
             <div class="service-history-header-wrap">
-              <div>
+              <div class="card-header-titles">
                 <h3>⛽ Refuel History &amp; Fuel Economy</h3>
                 <p class="form-desc">Full-to-full KM/L fuel consumption and refuel records.</p>
               </div>

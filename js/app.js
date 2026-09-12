@@ -170,6 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateComponentsViewVisibility();
   });
 
+  // Responsive switch for components view mode (cards on mobile <= 900px)
+  window.addEventListener('resize', () => {
+    window.updateComponentsViewVisibility?.();
+  });
+
   // ==========================================================================
   // SORTING CONTROLS WIRING
   // ==========================================================================

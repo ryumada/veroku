@@ -2081,16 +2081,27 @@ body {
 .form-card,
 .table-card,
 .cost-summary-card,
-.service-history-card {
+.service-history-card,
+.fuel-history-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* Standardized Card Header Titles & Subtitles */
+.card-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-header-titles .form-desc {
+  margin: 0;
+}
+
 .form-desc {
   font-size: 13.5px;
   color: var(--md-sys-color-on-surface-variant);
-  margin-top: -8px;
+  margin-top: 4px;
   margin-bottom: 8px;
 }
 
@@ -3253,6 +3264,11 @@ button[type="submit"]:active,
 
   .dropdown-menu-content {
     right: -42px;
+  }
+
+  /* Force cards view styling and hide toggle button group on mobile */
+  #components-view-toggle {
+    display: none;
   }
 }
 

@@ -448,10 +448,12 @@ function renderServiceCards(enrichedServices, activeVeh) {
 }
 
 /**
- * Update components view mode visibility based on active view mode.
+ * Update components view mode visibility based on active view mode and viewport size.
+ * Automatically defaults to Cards view on mobile (< 900px).
  */
 function updateComponentsViewVisibility() {
-  const mode = window.componentsViewMode || 'table';
+  const isMobile = window.innerWidth <= 900;
+  const mode = isMobile ? 'cards' : (window.componentsViewMode || 'table');
   const btnTable = document.getElementById('btn-components-table-view');
   const btnCards = document.getElementById('btn-components-card-view');
   const tableContainer = document.getElementById('components-table-container');

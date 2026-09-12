@@ -3,13 +3,15 @@
         "statusBar.debuggingBackground": "#2E2267",
         "activityBar.background": "#2E2267",
         "titleBar.activeBackground": "#412F90",
-        "titleBar.activeForeground": "#FBFBFE",
+        "titleBar.activeForeground": "#FFFFFF",
         "titleBar.inactiveBackground": "#2E2267",
-        "titleBar.inactiveForeground": "#FBFBFE",
+        "titleBar.inactiveForeground": "#FFFFFF",
         "statusBar.background": "#2E2267",
-        "statusBar.foreground": "#FBFBFE",
-        "statusBar.debuggingForeground": "#FBFBFE",
+        "statusBar.foreground": "#FFFFFF",
+        "statusBar.debuggingForeground": "#FFFFFF",
         "statusBar.noFolderBackground": "#2E2267",
-        "statusBar.noFolderForeground": "#FBFBFE"
+        "statusBar.noFolderForeground": "#FFFFFF",
+        "activityBar.foreground": "#FFFFFF",
+        "activityBar.inactiveForeground": "#FFFFFF"
     }
 }

@@ -1,0 +1,172 @@
+<!--
+Category: UI Shell
+File: privacy.html
+Description: Privacy Policy and Terms of Service document for Veroku application and Google OAuth integration.
+Dependencies: css/styles.css
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veroku — Privacy Policy & Terms of Service</title>
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .legal-container {
+      max-width: 840px;
+      margin: 40px auto;
+      padding: 32px 24px;
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-shape-xl);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    .legal-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      margin-bottom: 24px;
+    }
+    .legal-header h1 {
+      margin: 0;
+      font-size: 26px;
+      color: var(--md-sys-color-primary);
+      font-family: var(--font-display);
+      letter-spacing: 0.05em;
+    }
+    .legal-content h2 {
+      margin-top: 28px;
+      margin-bottom: 12px;
+      font-size: 19px;
+      color: var(--md-sys-color-on-surface);
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      padding-bottom: 6px;
+    }
+    .legal-content p, .legal-content li {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 14.5px;
+      line-height: 1.68;
+    }
+    .legal-content ul {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    .legal-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--md-shape-full);
+      font-size: 12px;
+      font-weight: 700;
+      background-color: var(--status-optimal-container);
+      color: var(--status-optimal-on-container);
+      border: 1px solid var(--status-optimal);
+      margin-bottom: 16px;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--md-sys-color-primary);
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body style="background-color: var(--md-sys-color-surface); min-height: 100vh; padding: 20px;">
+
+  <div class="legal-container">
+    <a href="./" class="back-btn">&larr; Back to Veroku App</a>
+
+    <header class="legal-header">
+      <img src="icons/icon.svg" alt="Veroku Logo" width="48" height="48" style="border-radius: 12px;">
+      <div>
+        <h1>VEROKU — Legal Policies</h1>
+        <p style="margin: 4px 0 0; font-size: 13px; color: var(--md-sys-color-on-surface-variant);">
+          Last updated: October 2026 &bull; Effective immediately
+        </p>
+      </div>
+    </header>
+
+    <main class="legal-content">
+      <span class="legal-badge">🔒 100% Client-Side &amp; Privacy-First</span>
+
+      <section id="privacy">
+        <h2>1. Privacy Policy</h2>
+        <p>
+          Veroku (<strong>"we"</strong>, <strong>"us"</strong>, or <strong>"our"</strong>) is committed to protecting your privacy. Veroku is designed from the ground up as an <strong>offline-first Progressive Web Application (PWA)</strong>. We do not operate external application tracking servers, databases, or analytics engines.
+        </p>
+
+        <h3>1.1 Information We Collect &amp; How It Is Stored</h3>
+        <ul>
+          <li><strong>Vehicle &amp; Maintenance Logs:</strong> All odometer readings, parts tracker intervals, maintenance history records, checklist tasks, and notes entered into Veroku remain strictly on your device inside your browser's local storage (<code>localStorage</code>).</li>
+          <li><strong>No Server Telemetry:</strong> We do not track, collect, transmit, or log your personal usage, IP addresses, location data, or vehicle information.</li>
+        </ul>
+
+        <h3>1.2 Google Drive Cloud Backup (Google OAuth &amp; Data Access)</h3>
+        <p>
+          Veroku provides an optional feature allowing users to back up and restore their vehicle data using their Google account:
+        </p>
+        <ul>
+          <li><strong>Google Identity &amp; Profile (<code>openid</code>, <code>userinfo.profile</code>, <code>userinfo.email</code>):</strong> We request basic profile info solely to display your name, email, and avatar in the Veroku settings bar to indicate that you are connected. This information is held temporarily in your browser session and is never sent to any third party.</li>
+          <li><strong>Google Drive AppData Access (<code>drive.appdata</code>):</strong> Veroku uses the Google Drive API strictly with the isolated <code>drive.appdata</code> scope. This sandboxed permission gives Veroku access <em>only</em> to its own hidden configuration file (<code>veroku-backup.json</code>). Veroku <strong>cannot</strong> read, view, modify, or access any personal files, documents, photos, or spreadsheets stored in your Google Drive.</li>
+          <li><strong>Zero Data Sharing:</strong> Your backup data is transferred directly and securely between your browser and Google's official API servers. We do not intercept, store, sell, or analyze your backup files.</li>
+        </ul>
+
+        <h3>1.3 Data Retention &amp; Deletion</h3>
+        <ul>
+          <li><strong>Local Data:</strong> You can completely and permanently delete all local vehicle data at any time via <strong>Settings &rarr; Danger Zone &rarr; Delete All Data</strong>.</li>
+          <li><strong>Cloud Data:</strong> You can disconnect your Google account at any time via <strong>Settings &rarr; Google Drive Cloud Backup &rarr; Disconnect</strong>, which immediately revokes the active OAuth token. You can delete the cloud backup file via Google Drive's "Manage Apps" settings or through Veroku.</li>
+        </ul>
+      </section>
+
+      <section id="terms">
+        <h2>2. Terms of Service</h2>
+        <p>
+          By accessing or using the Veroku application, you agree to be bound by these Terms of Service.
+        </p>
+
+        <h3>2.1 Use of the Software</h3>
+        <p>
+          Veroku is provided for personal vehicle maintenance tracking and informational purposes. The application calculates degradation based on user-provided distance and time intervals. It is your sole responsibility to ensure vehicle roadworthiness, abide by official manufacturer guidelines, and consult certified mechanics for vehicular safety.
+        </p>
+
+        <h3>2.2 Disclaimer of Warranties</h3>
+        <p>
+          Veroku is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis without warranties of any kind, whether express or implied. We do not warrant that calculations, notifications, or forecasts will prevent mechanical failures or accidents.
+        </p>
+
+        <h3>2.3 Limitation of Liability</h3>
+        <p>
+          In no event shall the authors or copyright holders of Veroku be liable for any direct, indirect, incidental, or consequential damages arising from the use of or inability to use this software.
+        </p>
+      </section>
+
+      <section id="contact">
+        <h2>3. Contact &amp; Open Source</h2>
+        <p>
+          Veroku is an open-source project hosted on GitHub. For inquiries, bug reports, or feature suggestions, visit the official repository:
+          <br>
+          <a href="https://github.com/ryumada/veroku" target="_blank" rel="noopener" style="color: var(--md-sys-color-primary); font-weight: 600;">
+            https://github.com/ryumada/veroku
+          </a>
+        </p>
+      </section>
+    </main>
+
+    <footer style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--md-sys-color-outline-variant); text-align: center; font-size: 13px; color: var(--md-sys-color-on-surface-variant);">
+      Veroku &bull; Offline-First Vehicle Degradation Tracker
+    </footer>
+  </div>
+
+</body>
+</html>

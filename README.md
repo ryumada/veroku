@@ -83,6 +83,7 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 ```text
 veroku/
 ├── index.html          # Application markup, modals, and views
+├── privacy.html        # Privacy Policy and Terms of Service (Google OAuth compliant)
 ├── manifest.json       # PWA Web App Manifest
 ├── sw.js               # Service Worker for offline asset caching
 ├── css/
@@ -91,10 +92,23 @@ veroku/
 │   ├── app.js          # App lifecycle, modal handling & event delegation
 │   ├── db.js           # LocalStorage database schema, migrations & CRUD
 │   ├── engine.js       # Mathematical degradation engine & date computations
+│   ├── notifications.js# Native OS & PWA notifications controller
+│   ├── sync.js         # Google Drive AppData synchronization engine
 │   └── ui.js           # Reactive view renderers, gauges & HUD components
 ├── fonts/              # Self-hosted offline WOFF2 fonts
 └── LICENSE             # MIT License
 ```
+
+---
+
+## 🔒 Privacy Policy & Terms of Service
+
+Veroku is built on an **offline-first, zero-telemetry architecture**:
+- **Local Storage Only**: All vehicle data, mileage logs, and checklists reside strictly in your browser's `localStorage`.
+- **Google Drive Sync (`drive.appdata`)**: Cloud backup connects directly from your browser to Google Drive's sandboxed Application Data folder. Veroku cannot read or access any other files on your Google Drive.
+- **No Third-Party Sharing**: No data is tracked, logged, or transmitted to external servers.
+
+Read the full legal documents at [privacy.html](file:///home/ryumada/personal_projects/veroku/privacy.html).
 
 ---
 

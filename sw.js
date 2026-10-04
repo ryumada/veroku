@@ -9,6 +9,7 @@ const CACHE_NAME = 'veroku-cache-v1.7';
 const ASSETS = [
   './',
   './index.html',
+  './privacy.html',
   './css/styles.css',
   './js/db.js',
   './js/engine.js',

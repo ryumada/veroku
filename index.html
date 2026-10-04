@@ -634,6 +634,65 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
               </div>
             </div>
 
+            <!-- Native System & OS Notifications Settings Card -->
+            <div class="card settings-card" id="card-native-notifications">
+              <div class="settings-card-header">
+                <span class="checklist-badge weekly">NOTIFY</span>
+                <h3>System &amp; OS Notifications</h3>
+              </div>
+              <p class="settings-card-description">
+                Receive native desktop, mobile lock screen, and system notification center alerts when vehicle components are overdue or scheduled inspections are due. Operates 100% offline with zero server tracking.
+              </p>
+              
+              <div class="notif-permission-status-row">
+                <span class="notif-perm-label">OS Permission Status:</span>
+                <span id="notif-perm-badge" class="checklist-badge daily">Checking...</span>
+              </div>
+
+              <div class="settings-row" style="margin-top: 12px;">
+                <label class="switch-container">
+                  <input type="checkbox" id="setting-notif-enabled">
+                  <span class="switch-slider"></span>
+                  <span class="switch-label">Enable System Notifications</span>
+                </label>
+              </div>
+
+              <!-- Sub-options container -->
+              <div id="notif-sub-options" class="notif-sub-options-box" style="display: none; margin-top: 14px; padding: 12px 14px; background: var(--md-sys-color-surface-container); border-radius: var(--md-shape-md); border: 1px solid var(--md-sys-color-outline-variant);">
+                <span style="display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--md-sys-color-primary); margin-bottom: 8px; text-transform: uppercase;">Alert Triggers</span>
+                
+                <div class="settings-row" style="margin-bottom: 8px;">
+                  <label class="switch-container">
+                    <input type="checkbox" id="setting-notif-critical" checked>
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">🚨 Overdue &amp; Critical Components</span>
+                  </label>
+                </div>
+                
+                <div class="settings-row" style="margin-bottom: 8px;">
+                  <label class="switch-container">
+                    <input type="checkbox" id="setting-notif-warning">
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">⚠️ Due Soon / Warning Thresholds</span>
+                  </label>
+                </div>
+
+                <div class="settings-row">
+                  <label class="switch-container">
+                    <input type="checkbox" id="setting-notif-checklists" checked>
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">📋 Scheduled Safety Checklists (Daily/Weekly/Monthly)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="notif-actions-row" style="margin-top: 16px;">
+                <button type="button" id="btn-test-notification" class="action-btn outline-btn" title="Trigger a test native notification on this device">
+                  <span>🔔</span> Send Test Notification
+                </button>
+              </div>
+            </div>
+
             <!-- Notification Toast Settings Card -->
             <div class="card settings-card">
               <div class="settings-card-header">
@@ -1480,6 +1539,7 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
   <script src="js/engine.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/sync.js"></script>
+  <script src="js/notifications.js"></script>
   <script src="js/app.js"></script>
 </body>
 

@@ -288,6 +288,10 @@ document.addEventListener('DOMContentLoaded', () => {
       saveAppState(state);
       renderAll(state);
       showToast(`Odometer logged at ${newOdo} KM`, 'success');
+
+      if (window.VerokuNotifications) {
+        window.VerokuNotifications.checkAndDispatchAlerts(state);
+      }
     }
   });
 
@@ -868,6 +872,12 @@ document.addEventListener('DOMContentLoaded', () => {
             date: Number(document.getElementById('reminder-monthly-date').value) || 1,
             time: document.getElementById('reminder-monthly-time').value || '10:00'
           }
+        },
+        notifications: {
+          enabled: document.getElementById('setting-notif-enabled')?.checked || false,
+          critical: document.getElementById('setting-notif-critical')?.checked !== false,
+          warning: document.getElementById('setting-notif-warning')?.checked === true,
+          checklists: document.getElementById('setting-notif-checklists')?.checked !== false
         },
         fuel_types: Array.from(document.querySelectorAll('#fuel-types-list .fuel-type-editor-row')).map((row, i) => ({
           id: `ft-${i + 1}`,
@@ -2480,5 +2490,60 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePWAInstallUI(true);
     showToast('Veroku was installed! You can launch it from your app menu.', 'success');
   });
+
+  // ==========================================================================
+  // NATIVE OS NOTIFICATIONS CONTROLLER & EVENT WIRING
+  // ==========================================================================
+  const notifEnabledToggle = document.getElementById('setting-notif-enabled');
+  const btnTestNotif = document.getElementById('btn-test-notification');
+
+  if (notifEnabledToggle) {
+    notifEnabledToggle.addEventListener('change', async (e) => {
+      const isChecked = e.target.checked;
+      const subOptions = document.getElementById('notif-sub-options');
+
+      if (isChecked) {
+        if (window.VerokuNotifications) {
+          const perm = await window.VerokuNotifications.requestPermission();
+          if (perm === 'granted') {
+            if (subOptions) subOptions.style.display = 'block';
+            showToast('System notifications enabled! Alerts will appear on your device.', 'success');
+            renderAll(state);
+            window.VerokuNotifications.checkAndDispatchAlerts(state);
+          } else {
+            e.target.checked = false;
+            if (subOptions) subOptions.style.display = 'none';
+            showToast('Notification permission was blocked in browser settings.', 'error');
+            renderAll(state);
+          }
+        }
+      } else {
+        if (subOptions) subOptions.style.display = 'none';
+        showToast('System notifications disabled.', 'info');
+      }
+    });
+  }
+
+  if (btnTestNotif) {
+    btnTestNotif.addEventListener('click', async () => {
+      if (window.VerokuNotifications) {
+        btnTestNotif.disabled = true;
+        const sent = await window.VerokuNotifications.sendTestNotification();
+        btnTestNotif.disabled = false;
+        if (sent) {
+          showToast('Test notification sent! Check your notification center.', 'success');
+        } else {
+          showToast('Could not send test notification. Check browser permissions.', 'error');
+        }
+        renderAll(state);
+      }
+    });
+  }
+
+  // Initial check for native notifications on app startup
+  if (window.VerokuNotifications) {
+    window.VerokuNotifications.checkAndDispatchAlerts(state);
+  }
 });
+
 

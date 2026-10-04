@@ -71,6 +71,7 @@
   --md-sys-color-surface-container-lowest: #06090e;
   --md-sys-color-surface-container-low: #111622;
   --md-sys-color-surface-container: #161c2b;
+  --md-sys-color-surface-container-rgb: 22, 28, 43;
   --md-sys-color-surface-container-high: #1d2538;
   --md-sys-color-surface-container-highest: #263148;
 
@@ -152,6 +153,7 @@
   --md-sys-color-surface-container-lowest: #ffffff;
   --md-sys-color-surface-container-low: #f1f3f9;
   --md-sys-color-surface-container: #e9edf6;
+  --md-sys-color-surface-container-rgb: 233, 237, 246;
   --md-sys-color-surface-container-high: #e2e7f0;
   --md-sys-color-surface-container-highest: #dbe0eb;
 
@@ -567,6 +569,45 @@ body {
   align-items: center;
   gap: 10px;
 }
+
+/* Native System Notifications Styles */
+.notif-permission-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-md);
+  margin-top: 10px;
+}
+.notif-perm-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.notif-sub-options-box {
+  animation: m3FadeIn 200ms ease-out;
+}
+.notif-sub-options-box .switch-label {
+  font-size: 13px;
+}
+.checklist-badge.perm-granted {
+  background-color: var(--status-optimal-container);
+  color: var(--status-optimal-on-container);
+  border: 1px solid var(--status-optimal);
+}
+.checklist-badge.perm-denied {
+  background-color: var(--status-critical-container);
+  color: var(--status-critical-on-container);
+  border: 1px solid var(--status-critical);
+}
+.checklist-badge.perm-default {
+  background-color: var(--status-warning-container);
+  color: var(--status-warning-on-container);
+  border: 1px solid var(--status-warning);
+}
+
 
 
 
@@ -3290,9 +3331,11 @@ button[type="submit"]:active,
     margin-bottom: 0;
     padding: 8px 16px;
     border-radius: var(--md-shape-full);
-    background: rgba(var(--md-sys-color-surface-container-rgb, 30, 31, 35), 0.72);
+    background: rgba(var(--md-sys-color-surface-container-rgb), 0.88);
+    border: 1px solid var(--md-sys-color-outline-variant);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     pointer-events: auto;
   }
 

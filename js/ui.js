@@ -1012,6 +1012,42 @@ function renderSettings(state) {
   const toastDuration = document.getElementById('setting-toast-duration');
   if (toastDuration) toastDuration.value = state.settings?.toast_duration !== undefined ? state.settings.toast_duration : 5;
 
+  // Native OS Notifications Settings
+  const notifSettings = state.settings?.notifications || {
+    enabled: false,
+    critical: true,
+    warning: false,
+    checklists: true
+  };
+
+  const notifEnabledCheckbox = document.getElementById('setting-notif-enabled');
+  const notifCriticalCheckbox = document.getElementById('setting-notif-critical');
+  const notifWarningCheckbox = document.getElementById('setting-notif-warning');
+  const notifChecklistsCheckbox = document.getElementById('setting-notif-checklists');
+  const notifSubOptions = document.getElementById('notif-sub-options');
+  const notifPermBadge = document.getElementById('notif-perm-badge');
+
+  if (notifEnabledCheckbox) notifEnabledCheckbox.checked = notifSettings.enabled;
+  if (notifCriticalCheckbox) notifCriticalCheckbox.checked = notifSettings.critical !== false;
+  if (notifWarningCheckbox) notifWarningCheckbox.checked = notifSettings.warning === true;
+  if (notifChecklistsCheckbox) notifChecklistsCheckbox.checked = notifSettings.checklists !== false;
+  if (notifSubOptions) notifSubOptions.style.display = notifSettings.enabled ? 'block' : 'none';
+
+  if (notifPermBadge && window.VerokuNotifications) {
+    const perm = window.VerokuNotifications.getPermission();
+    notifPermBadge.className = 'checklist-badge';
+    if (perm === 'granted') {
+      notifPermBadge.classList.add('perm-granted');
+      notifPermBadge.textContent = 'Granted (Active)';
+    } else if (perm === 'denied') {
+      notifPermBadge.classList.add('perm-denied');
+      notifPermBadge.textContent = 'Blocked / Denied';
+    } else {
+      notifPermBadge.classList.add('perm-default');
+      notifPermBadge.textContent = 'Needs Permission';
+    }
+  }
+
   // Render dynamic fuel types editor
   renderFuelTypesEditor(state.settings?.fuel_types);
 

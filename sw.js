@@ -5,7 +5,7 @@
  * @requires CacheStorage, ServiceWorkerGlobalScope
  */
 
-const CACHE_NAME = 'veroku-cache-v1.6';
+const CACHE_NAME = 'veroku-cache-v1.7';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './js/engine.js',
   './js/ui.js',
   './js/sync.js',
+  './js/notifications.js',
   './js/app.js',
   './manifest.json',
   './icons/icon.svg',
@@ -78,3 +79,26 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
+// Notification Click Event - focus existing window or open app
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+
+  const targetUrl = new URL('./index.html', self.location.origin).href;
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes('index.html') || client.url === self.location.origin + '/' || client.url === targetUrl) {
+          if ('focus' in client) {
+            return client.focus();
+          }
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
+  );
+});
+

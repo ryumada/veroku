@@ -2394,17 +2394,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCloseInstallGuide = document.getElementById('btn-close-install-guide');
   const btnDismissInstallGuide = document.getElementById('btn-dismiss-install-guide');
 
-  // Detect standalone display mode
+  // Detect standalone window display mode
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
 
   function updatePWAInstallUI(installed) {
     if (installed) {
+      localStorage.setItem('v_pwa_installed', 'true');
       if (btnNavInstall) {
         btnNavInstall.classList.add('installed');
         btnNavInstall.title = 'Veroku is installed';
-        btnNavInstall.innerHTML = '<span class="btn-icon">✅</span><span class="btn-label">Installed</span>';
-        btnNavInstall.hidden = true; // Clean UI: hide from main navigation when already installed
+        btnNavInstall.hidden = true;
+        btnNavInstall.style.display = 'none';
       }
       if (btnSettingsInstall) {
         btnSettingsInstall.style.display = 'none';
@@ -2417,8 +2418,11 @@ document.addEventListener('DOMContentLoaded', () => {
         pwaStatusDesc.textContent = 'Veroku is installed as a standalone application on this device. You can launch it directly from your application menu or home screen.';
       }
     } else {
+      localStorage.removeItem('v_pwa_installed');
       if (btnNavInstall) {
+        btnNavInstall.classList.remove('installed');
         btnNavInstall.hidden = false;
+        btnNavInstall.style.display = '';
       }
       if (btnSettingsInstall) {
         btnSettingsInstall.style.display = 'inline-flex';
@@ -2433,17 +2437,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  updatePWAInstallUI(isStandalone);
+  // Initial UI state: if in standalone window, it's definitely installed; otherwise check localStorage
+  const initialInstalledState = isStandalone || (localStorage.getItem('v_pwa_installed') === 'true');
+  updatePWAInstallUI(initialInstalledState);
 
-  // Catch the browser beforeinstallprompt event
+  // Modern browser API: verify live installation status with the OS
+  if ('getInstalledRelatedApps' in navigator && !isStandalone) {
+    navigator.getInstalledRelatedApps().then((relatedApps) => {
+      const isActuallyInstalled = Array.isArray(relatedApps) && relatedApps.length > 0;
+      updatePWAInstallUI(isActuallyInstalled);
+    }).catch(() => {});
+  }
+
+  // Catch the browser beforeinstallprompt event:
+  // If this fires, it PROVES the app is currently NOT installed (or was uninstalled)
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    if (!isStandalone) {
-      if (btnNavInstall) btnNavInstall.hidden = false;
-      if (btnSettingsInstall) btnSettingsInstall.style.display = 'inline-flex';
-    }
+    // Reset install state because the browser allows installing
+    updatePWAInstallUI(false);
   });
 
   // Action to trigger installation prompt

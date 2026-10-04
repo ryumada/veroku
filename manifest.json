@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "Veroku Vehicle Degradation Tracker",
+  "name": "Veroku",
   "short_name": "Veroku",
   "description": "Offline-first dashboard to track vehicle parts degradation cycle and routine maintenance safety checklists.",
   "start_url": "./index.html",

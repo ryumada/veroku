@@ -10,8 +10,11 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Veroku | Vehicle Degradation Tracker</title>
-  <meta name="description" content="Offline-first vehicle degradation tracking and maintenance management progressive web application.">
+  <title>Veroku</title>
+  <meta name="application-name" content="Veroku">
+  <meta property="og:title" content="Veroku">
+  <meta property="og:site_name" content="Veroku">
+  <meta name="description" content="Veroku — Offline-first vehicle degradation tracking and maintenance management progressive web application.">
   <meta name="theme-color" content="#0b0f17">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,6 +26,14 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="manifest.json">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Veroku",
+    "applicationCategory": "UtilitiesApplication"
+  }
+  </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
@@ -41,9 +52,8 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <img src="icons/icon.svg" alt="Veroku Logo" class="brand-icon-img" width="40" height="40">
         </span>
         <div class="brand-text">
-
-          <h1>VEROKU</h1>
-          <p>VEHICLE DEGRADATION TRACKER</p>
+          <h1 id="brand-app-name" itemprop="name">Veroku</h1>
+          <p>Vehicle Degradation Tracker</p>
         </div>
         <button type="button" id="btn-theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Theme">🌙</button>
       </div>

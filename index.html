@@ -22,7 +22,10 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="manifest.json">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
+
+
 
 
 <body>
@@ -729,8 +732,71 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             </div>
           </div>
 
+          <!-- Google Drive Cloud Sync Card -->
+          <div class="card settings-card" id="card-google-sync">
+            <div class="settings-card-header">
+              <span class="checklist-badge weekly">CLOUD</span>
+              <h3>Google Drive Cloud Backup</h3>
+            </div>
+            <div class="settings-card-body">
+              <!-- Disconnected State -->
+              <div id="google-sync-disconnected" class="google-sync-state">
+                <p class="settings-card-description">
+                  Connect your Google Account to back up your vehicle maintenance data directly to your personal Google Drive (AppData folder). Your data remains 100% private to you and allows seamless restore across devices.
+                </p>
+                <div class="google-auth-actions" style="margin-top: 14px;">
+                  <button type="button" id="btn-google-signin" class="action-btn google-btn">
+                    <svg class="google-g-icon" viewBox="0 0 24 24" width="18" height="18">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Sign in with Google</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Connected State -->
+              <div id="google-sync-connected" class="google-sync-state" hidden>
+                <div class="google-profile-bar">
+                  <img id="google-user-avatar" src="" alt="Google Avatar" class="google-avatar-img">
+                  <div class="google-profile-info">
+                    <span id="google-user-name" class="google-name">Google User</span>
+                    <span id="google-user-email" class="google-email">user@gmail.com</span>
+                  </div>
+                  <span class="checklist-badge daily" style="margin-left: auto;">Connected</span>
+                </div>
+
+                <div class="cloud-backup-status-box">
+                  <div class="cloud-status-row">
+                    <span class="cloud-status-label">Cloud Backup:</span>
+                    <span id="cloud-backup-time" class="cloud-status-val">Checking...</span>
+                  </div>
+                  <div class="cloud-status-row" id="cloud-backup-size-row">
+                    <span class="cloud-status-label">File Size:</span>
+                    <span id="cloud-backup-size" class="cloud-status-val">-</span>
+                  </div>
+                </div>
+
+                <div class="google-sync-actions">
+                  <button type="button" id="btn-cloud-backup" class="action-btn submit-btn" title="Upload current local state to Google Drive">
+                    <span>☁️</span> Backup to Cloud (Upload)
+                  </button>
+                  <button type="button" id="btn-cloud-restore" class="action-btn outline-btn" title="Download backup from Google Drive and restore">
+                    <span>📥</span> Restore from Cloud (Download)
+                  </button>
+                  <button type="button" id="btn-google-signout" class="action-btn outline-btn item-danger" title="Disconnect Google Account">
+                    <span>🚪</span> Disconnect
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Data Management Accordion Card -->
           <div class="card settings-card accordion-card" id="accordion-data-mgmt">
+
 
             <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt" role="button" tabindex="0"
               aria-expanded="false">
@@ -1370,15 +1436,52 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
     </div>
   </div>
 
+  <!-- Cloud Restore Confirmation Modal -->
+  <div id="modal-cloud-restore-confirm" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 20px;">☁️</span>
+          <h3>Confirm Cloud Restore</h3>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-cloud-restore">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px; font-size: 14px; line-height: 1.6;">
+        <p style="margin-bottom: 12px; color: var(--md-sys-color-on-surface);">
+          You are about to restore your vehicle maintenance data from <strong>Google Drive</strong>.
+        </p>
+        <div style="background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--md-sys-color-on-surface-variant);">Cloud Backup Time:</span>
+            <strong id="cloud-restore-time-val" style="color: var(--md-sys-color-on-surface);">-</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--md-sys-color-on-surface-variant);">File Size:</span>
+            <strong id="cloud-restore-size-val" style="color: var(--md-sys-color-on-surface);">-</strong>
+          </div>
+        </div>
+        <p style="color: #f59e0b; margin: 0; font-size: 13px; display: flex; align-items: flex-start; gap: 6px;">
+          <span>⚠️</span>
+          <span>This action will replace your current local vehicle records with the cloud backup. A rolling auto-snapshot of your current local state will be saved automatically before restoring.</span>
+        </p>
+      </div>
+      <div class="modal-actions" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="action-btn outline-btn" id="btn-cancel-cloud-restore">Cancel</button>
+        <button type="button" class="action-btn submit-btn" id="btn-confirm-cloud-restore">Restore from Cloud</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Containers -->
   <div id="toast-container" class="toast-container"></div>
-
 
   <!-- Script Declarations -->
   <script src="js/db.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/sync.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 
 </html>

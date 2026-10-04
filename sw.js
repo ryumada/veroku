@@ -5,7 +5,7 @@
  * @requires CacheStorage, ServiceWorkerGlobalScope
  */
 
-const CACHE_NAME = 'veroku-cache-v1.5';
+const CACHE_NAME = 'veroku-cache-v1.6';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './js/db.js',
   './js/engine.js',
   './js/ui.js',
+  './js/sync.js',
   './js/app.js',
   './manifest.json',
   './icons/icon.svg',

@@ -1076,6 +1076,169 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('input-import')?.click();
   });
 
+  // ==========================================================================
+  // GOOGLE DRIVE CLOUD SYNC WIRING
+  // ==========================================================================
+  const googleSyncDisconnected = document.getElementById('google-sync-disconnected');
+  const googleSyncConnected = document.getElementById('google-sync-connected');
+  const googleUserAvatar = document.getElementById('google-user-avatar');
+  const googleUserName = document.getElementById('google-user-name');
+  const googleUserEmail = document.getElementById('google-user-email');
+  const cloudBackupTime = document.getElementById('cloud-backup-time');
+  const cloudBackupSize = document.getElementById('cloud-backup-size');
+
+  function updateGoogleSyncUI(user, cloudMeta) {
+    if (!googleSyncDisconnected || !googleSyncConnected) return;
+
+    if (user) {
+      googleSyncDisconnected.hidden = true;
+      googleSyncConnected.removeAttribute('hidden');
+
+      if (googleUserAvatar) {
+        googleUserAvatar.src = user.picture || 'icons/icon-192.png';
+      }
+      if (googleUserName) {
+        googleUserName.textContent = user.name || 'Google Account';
+      }
+      if (googleUserEmail) {
+        googleUserEmail.textContent = user.email || '';
+      }
+
+      const meta = cloudMeta || (window.VerokuSync ? window.VerokuSync.getCloudMeta() : null);
+      if (meta && meta.lastSyncTime) {
+        const d = new Date(meta.lastSyncTime);
+        if (cloudBackupTime) cloudBackupTime.textContent = d.toLocaleString();
+        if (cloudBackupSize && meta.sizeBytes) {
+          cloudBackupSize.textContent = `${(meta.sizeBytes / 1024).toFixed(1)} KB`;
+        }
+      } else {
+        if (cloudBackupTime) cloudBackupTime.textContent = 'No cloud backup yet';
+        if (cloudBackupSize) cloudBackupSize.textContent = '-';
+      }
+    } else {
+      googleSyncDisconnected.removeAttribute('hidden');
+      googleSyncConnected.hidden = true;
+    }
+  }
+
+  // Initialize UI state on load
+  if (window.VerokuSync) {
+    const savedGoogleUser = window.VerokuSync.getSavedUser();
+    updateGoogleSyncUI(savedGoogleUser);
+  }
+
+  // Sign In
+  document.getElementById('btn-google-signin')?.addEventListener('click', async () => {
+    triggerHaptic('light');
+    if (!window.VerokuSync) {
+      showToast('Cloud Sync library not ready. Please check internet connection.', 'error');
+      return;
+    }
+    try {
+      showToast('Opening Google sign-in...', 'info');
+      await window.VerokuSync.signIn();
+      const user = window.VerokuSync.getSavedUser();
+      if (user) {
+        showToast(`Connected as ${user.name}!`, 'success');
+        updateGoogleSyncUI(user);
+
+        // Check if existing backup exists on Google Drive
+        try {
+          const cloudFile = await window.VerokuSync.findCloudBackup();
+          if (cloudFile) {
+            updateGoogleSyncUI(user, {
+              lastSyncTime: cloudFile.modifiedTime,
+              sizeBytes: cloudFile.size
+            });
+          }
+        } catch (e) {
+          console.warn('Could not inspect cloud file:', e);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Google sign-in was cancelled or failed.', 'error');
+    }
+  });
+
+  // Disconnect
+  document.getElementById('btn-google-signout')?.addEventListener('click', () => {
+    triggerHaptic('light');
+    if (window.VerokuSync) {
+      window.VerokuSync.disconnect();
+    }
+    updateGoogleSyncUI(null);
+    showToast('Disconnected from Google Drive.', 'info');
+  });
+
+  // Backup to Cloud (Upload)
+  document.getElementById('btn-cloud-backup')?.addEventListener('click', async () => {
+    triggerHaptic('light');
+    if (!window.VerokuSync) return;
+
+    try {
+      showToast('Uploading backup to Google Drive...', 'info');
+      const meta = await window.VerokuSync.uploadBackup();
+      const user = window.VerokuSync.getSavedUser();
+      updateGoogleSyncUI(user, meta);
+      showToast('Backup successfully uploaded to Google Drive!', 'success');
+      triggerHaptic('success');
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Cloud backup failed. Check connection.', 'error');
+    }
+  });
+
+  // Restore from Cloud (Download)
+  let pendingCloudBackupData = null;
+
+  document.getElementById('btn-cloud-restore')?.addEventListener('click', async () => {
+    triggerHaptic('light');
+    if (!window.VerokuSync) return;
+
+    try {
+      showToast('Downloading backup from Google Drive...', 'info');
+      const { data, meta } = await window.VerokuSync.downloadBackup();
+      pendingCloudBackupData = data;
+
+      const timeEl = document.getElementById('cloud-restore-time-val');
+      const sizeEl = document.getElementById('cloud-restore-size-val');
+      if (timeEl) timeEl.textContent = meta.lastSyncTime ? new Date(meta.lastSyncTime).toLocaleString() : 'Unknown';
+      if (sizeEl) sizeEl.textContent = meta.sizeBytes ? `${(meta.sizeBytes / 1024).toFixed(1)} KB` : 'Unknown';
+
+      openModal('modal-cloud-restore-confirm');
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || 'Could not retrieve cloud backup.', 'error');
+    }
+  });
+
+  // Confirm Cloud Restore
+  document.getElementById('btn-confirm-cloud-restore')?.addEventListener('click', () => {
+    triggerHaptic('success');
+    if (pendingCloudBackupData) {
+      if (typeof saveAutoSnapshot === 'function') {
+        saveAutoSnapshot(getAppState(), 'Pre-Cloud Restore Snapshot');
+      }
+      saveAppState(pendingCloudBackupData);
+      state = getAppState();
+      renderAll(state);
+      closeModal();
+      showToast('Vehicle records restored from Google Drive!', 'success');
+      pendingCloudBackupData = null;
+    }
+  });
+
+  document.getElementById('btn-cancel-cloud-restore')?.addEventListener('click', () => {
+    closeModal();
+    pendingCloudBackupData = null;
+  });
+  document.getElementById('btn-close-cloud-restore')?.addEventListener('click', () => {
+    closeModal();
+    pendingCloudBackupData = null;
+  });
+
+
   document.getElementById('btn-load-example-data')?.addEventListener('click', () => {
     const activeVeh = getActiveVehicle(state);
     if (!activeVeh) return;

@@ -5,7 +5,11 @@ description: Project overview, features, architecture, and usage guide for Verok
 context: Root Repository
 -->
 
-# ⚙️ VEROKU — Vehicle Degradation Tracker
+<p align="center">
+  <img src="icons/icon.svg" alt="Veroku Logo" width="120" height="120">
+</p>
+
+<h1 style="text-align: center; font-size: 2rem; font-weight: bold;">VEROKU — Vehicle Degradation Tracker</h1>
 
 **VEROKU** is an offline-first, zero-dependency vehicle degradation tracking and maintenance management progressive web application. Built with vanilla HTML5, CSS3, and modern ES6+ JavaScript, Veroku models vehicle component wear by evaluating absolute odometer distance intervals and service timelines with zero external tracking dependencies.
 

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="tileBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="50%" stop-color="#0b0f17"/>
+      <stop offset="100%" stop-color="#05080e"/>
+    </linearGradient>
+
+    <!-- Speedometer Gauge Gradient (Cyan -> Blue -> Amber -> Red from bottom-left to top-right) -->
+    <linearGradient id="gaugeGradient" x1="15%" y1="85%" x2="85%" y2="25%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="40%" stop-color="#3b82f6"/>
+      <stop offset="75%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+
+    <!-- Central Dial Background Gradient -->
+    <radialGradient id="dialBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#182338"/>
+      <stop offset="60%" stop-color="#0d1524"/>
+      <stop offset="100%" stop-color="#070a10"/>
+    </radialGradient>
+
+    <!-- Bezel Metallic Ring Gradient -->
+    <linearGradient id="bezelRing" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b4d66"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Stylized V Monogram Gradients -->
+    <linearGradient id="vLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="vRightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.22"/>
+      <stop offset="60%" stop-color="#3b82f6" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#0b0f17" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 1. App Tile Rounded Background -->
+  <rect width="512" height="512" rx="112" fill="url(#tileBg)"/>
+  <rect width="506" height="506" x="3" y="3" rx="109" fill="none" stroke="#1e293b" stroke-width="2" opacity="0.8"/>
+
+  <!-- 2. Ambient Radial Glow -->
+  <circle cx="256" cy="256" r="230" fill="url(#ambientGlow)"/>
+
+  <!-- 3. Outer Concentric Titanium Gear Accents -->
+  <g opacity="0.6">
+    <circle cx="256" cy="256" r="212" fill="none" stroke="#1e293b" stroke-width="7" stroke-dasharray="14 23.4" stroke-linecap="round"/>
+  </g>
+
+  <!-- 4. Speedometer Track (Background Arc: 270 degrees, gap at bottom) -->
+  <!-- R=172, Circumference = 1080.7. 270 deg = 810.5, 90 deg gap = 270.2 -->
+  <path d="M 134.4 377.6 A 172 172 0 1 1 377.6 377.6"
+        fill="none" stroke="#151e2e" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- 5. Speedometer Active Degradation Gauge Arc (~190 deg filled, 570 length) -->
+  <path d="M 134.4 377.6 A 172 172 0 1 1 395.2 154.9"
+        fill="none" stroke="url(#gaugeGradient)" stroke-width="22" stroke-linecap="round"
+        filter="url(#softGlow)"/>
+
+  <!-- 6. Mathematically Computed Radial Ticks -->
+  <g stroke-linecap="round">
+    <line x1="154.2" y1="357.8" x2="144.3" y2="367.7" stroke="#38bdf8" stroke-width="4"/>
+    <line x1="119.0" y1="300.5" x2="105.7" y2="304.8" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="113.8" y1="233.5" x2="99.9" y2="231.3" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="139.5" y1="171.4" x2="128.2" y2="163.1" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="190.6" y1="127.7" x2="184.3" y2="115.2" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="256.0" y1="112.0" x2="256.0" y2="98.0" stroke="#60a5fa" stroke-width="4"/>
+    <line x1="321.4" y1="127.7" x2="327.7" y2="115.2" stroke="#f59e0b" stroke-width="3"/>
+    <line x1="372.5" y1="171.4" x2="383.8" y2="163.1" stroke="#f59e0b" stroke-width="3"/>
+    <line x1="398.2" y1="233.5" x2="412.1" y2="231.3" stroke="#ef4444" stroke-width="3"/>
+    <line x1="393.0" y1="300.5" x2="406.3" y2="304.8" stroke="#ef4444" stroke-width="3"/>
+    <line x1="357.8" y1="357.8" x2="367.7" y2="367.7" stroke="#ef4444" stroke-width="4"/>
+  </g>
+
+  <!-- 7. Dial Inner Bezel (Concentric at 256, 256) -->
+  <circle cx="256" cy="256" r="130" fill="url(#dialBg)" stroke="url(#bezelRing)" stroke-width="5"/>
+  <circle cx="256" cy="256" r="124" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.3"/>
+
+  <!-- 8. Speedometer Dynamic Needle Indicator (Pointing to ~45 deg / 2 o'clock) -->
+  <g transform="rotate(48 256 256)">
+    <path d="M 253 256 L 254.8 142 L 256 132 L 257.2 142 L 259 256 Z" fill="#38bdf8" filter="url(#softGlow)"/>
+    <path d="M 255.2 256 L 255.6 142 L 256 132 L 256.4 142 L 256.8 256 Z" fill="#ffffff"/>
+  </g>
+
+  <!-- 9. Bold Iconic VEROKU "V" Emblem -->
+  <g id="brand-v" filter="url(#softGlow)">
+    <!-- Left Wing (Cyan / Blue Gradient) -->
+    <path d="M 256 318 L 196 182 L 226 182 L 256 254 L 256 318 Z"
+          fill="url(#vLeftGrad)"/>
+    <!-- Right Wing (Glossy White / Sky Blue Highlight) -->
+    <path d="M 256 318 L 256 254 L 286 182 L 316 182 Z"
+          fill="url(#vRightGrad)"/>
+    <!-- Center Bevel Ridge -->
+    <line x1="256" y1="254" x2="256" y2="318" stroke="#ffffff" stroke-width="2.5" opacity="0.95"/>
+  </g>
+
+  <!-- 10. Center Needle Hub (Concentric at 256, 256) -->
+  <circle cx="256" cy="256" r="16" fill="#0b1320" stroke="#38bdf8" stroke-width="3"/>
+  <circle cx="256" cy="256" r="9" fill="#0284c7"/>
+  <circle cx="256" cy="256" r="4" fill="#ffffff"/>
+
+  <!-- 11. Lower Sub-HUD Badge: "VEROKU" -->
+  <g transform="translate(256, 424)">
+    <rect x="-62" y="-13" width="124" height="26" rx="13" fill="#0c1322" stroke="#1e293b" stroke-width="2"/>
+    <text x="0" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          font-size="11.5" font-weight="900" letter-spacing="3.5" fill="#38bdf8" text-anchor="middle">
+      VEROKU
+    </text>
+  </g>
+</svg>

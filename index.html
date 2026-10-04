@@ -11,9 +11,19 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Veroku | Vehicle Degradation Tracker</title>
+  <meta name="description" content="Offline-first vehicle degradation tracking and maintenance management progressive web application.">
+  <meta name="theme-color" content="#0b0f17">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Veroku">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="manifest.json">
 </head>
+
 
 <body>
 
@@ -23,8 +33,11 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
     <!-- Left Navigation Sidebar / Top Header (Responsive) -->
     <header class="app-header">
       <div class="brand">
-        <span class="brand-icon">⚙️</span>
+        <span class="brand-icon">
+          <img src="icons/icon.svg" alt="Veroku Logo" class="brand-icon-img" width="40" height="40">
+        </span>
         <div class="brand-text">
+
           <h1>VEROKU</h1>
           <p>VEHICLE DEGRADATION TRACKER</p>
         </div>
@@ -48,7 +61,12 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
           <span class="btn-icon">⚙️</span>
           <span class="btn-label">Settings</span>
         </button>
+        <button type="button" id="btn-install-app" class="nav-btn nav-install-btn" title="Install Veroku as App" hidden>
+          <span class="btn-icon">📲</span>
+          <span class="btn-label">Install App</span>
+        </button>
       </nav>
+
 
       <input type="file" id="input-import" accept=".json" style="display: none;">
     </header>
@@ -679,8 +697,41 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
             </div>
           </div>
 
+          <!-- Application & Installation (PWA) Card -->
+          <div class="card settings-card" id="card-pwa-installation">
+            <div class="settings-card-header">
+              <span class="checklist-badge weekly">APP</span>
+              <h3>Application &amp; Offline Installation</h3>
+            </div>
+            <div class="settings-card-body">
+              <div class="pwa-status-row">
+                <div class="pwa-icon-preview">
+                  <img src="icons/icon-192.png" alt="Veroku App Icon" width="48" height="48" class="pwa-preview-img">
+                </div>
+                <div class="pwa-status-info">
+                  <div class="pwa-status-title-row">
+                    <span class="pwa-app-title">Veroku PWA</span>
+                    <span id="pwa-status-badge" class="checklist-badge daily">Checking...</span>
+                  </div>
+                  <p class="settings-card-description" id="pwa-status-desc">
+                    Install Veroku on your phone, tablet, or PC to launch directly from your application menu and use 100% offline with zero load delay.
+                  </p>
+                </div>
+              </div>
+              <div class="pwa-actions-row">
+                <button type="button" id="btn-settings-install-app" class="action-btn submit-btn" style="display: none;">
+                  <span>📲</span> Install Veroku App
+                </button>
+                <button type="button" id="btn-show-install-guide" class="action-btn outline-btn">
+                  <span>ℹ️</span> How to Install
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Data Management Accordion Card -->
           <div class="card settings-card accordion-card" id="accordion-data-mgmt">
+
             <div class="settings-card-header accordion-header" id="btn-toggle-data-mgmt" role="button" tabindex="0"
               aria-expanded="false">
               <div class="accordion-title-wrap">
@@ -754,8 +805,24 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
               </div>
             </div>
           </div>
+
+          <!-- App Version & Build Information Footer -->
+          <footer class="settings-version-footer">
+            <div class="version-brand-row">
+              <span class="version-logo-text">VEROKU</span>
+              <span class="version-pill">v1.5</span>
+            </div>
+            <p class="version-details">
+              Vehicle Degradation Tracker &bull; Offline PWA Architecture
+            </p>
+            <p class="version-subdetails">
+              Build Cache: <code>veroku-cache-v1.5</code> &bull; All data stored strictly on this device
+            </p>
+          </footer>
+
         </div>
       </section>
+
 
     </main>
   </div>
@@ -1251,8 +1318,61 @@ Dependencies: css/styles.css, js/db.js, js/engine.js, js/ui.js, js/app.js
     </div>
   </div>
 
+  <!-- Install Guide Modal -->
+  <div id="modal-install-guide" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img src="icons/icon-192.png" alt="Veroku Icon" width="32" height="32" style="border-radius: 8px;">
+          <h3>Installing Veroku</h3>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-install-guide">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px; font-size: 14px; line-height: 1.6;">
+        <p style="margin-bottom: 14px; color: var(--md-sys-color-on-surface-variant);">
+          Veroku is a Progressive Web App (PWA) that installs locally without an app store, preserving full offline capability and adding an icon to your application menu or home screen.
+        </p>
+
+        <div class="guide-platform-card" style="background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 6px; font-size: 14px; color: var(--md-sys-color-primary); display: flex; align-items: center; gap: 6px;">
+            <span>💻</span> Chrome / Edge / Desktop
+          </h4>
+          <ol style="margin: 0; padding-left: 20px; color: var(--md-sys-color-on-surface);">
+            <li>Look for the <strong>Install</strong> icon in your browser address bar (or click <strong>Install App</strong> in the sidebar).</li>
+            <li>Click <strong>Install</strong> when prompted. The app appears in your Start Menu / Applications list.</li>
+          </ol>
+        </div>
+
+        <div class="guide-platform-card" style="background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 6px; font-size: 14px; color: var(--md-sys-color-primary); display: flex; align-items: center; gap: 6px;">
+            <span>🤖</span> Android (Chrome / Firefox)
+          </h4>
+          <ol style="margin: 0; padding-left: 20px; color: var(--md-sys-color-on-surface);">
+            <li>Tap <strong>Install App</strong> in the menu, or open the browser menu (⋮) in the top-right.</li>
+            <li>Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="guide-platform-card" style="background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; padding: 14px;">
+          <h4 style="margin: 0 0 6px; font-size: 14px; color: var(--md-sys-color-primary); display: flex; align-items: center; gap: 6px;">
+            <span>🍏</span> iOS Safari (iPhone / iPad)
+          </h4>
+          <ol style="margin: 0; padding-left: 20px; color: var(--md-sys-color-on-surface);">
+            <li>Tap the <strong>Share</strong> button (box with upward arrow ⎋) in Safari.</li>
+            <li>Scroll down and tap <strong>Add to Home Screen</strong> (➕).</li>
+            <li>Tap <strong>Add</strong> in the top-right corner.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="modal-actions" style="padding: 12px 20px; display: flex; justify-content: flex-end;">
+        <button type="button" class="action-btn submit-btn" id="btn-dismiss-install-guide">Got It</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Containers -->
   <div id="toast-container" class="toast-container"></div>
+
 
   <!-- Script Declarations -->
   <script src="js/db.js"></script>

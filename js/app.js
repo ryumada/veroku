@@ -89,8 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   // TAB NAVIGATION WIRING
   // ==========================================================================
-  const navButtons = document.querySelectorAll('.nav-btn');
+  const navButtons = document.querySelectorAll('.nav-btn[data-view]');
   const sections = document.querySelectorAll('.view-section');
+
 
   navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2207,4 +2208,114 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch((err) => console.error('Service Worker registration failed:', err));
     });
   }
+
+  // ==========================================================================
+  // PWA INSTALLATION LIFECYCLE & APP MENU PROMPT
+  // ==========================================================================
+  let deferredPrompt = null;
+  const btnNavInstall = document.getElementById('btn-install-app');
+  const btnSettingsInstall = document.getElementById('btn-settings-install-app');
+  const btnShowGuide = document.getElementById('btn-show-install-guide');
+  const pwaStatusBadge = document.getElementById('pwa-status-badge');
+  const pwaStatusDesc = document.getElementById('pwa-status-desc');
+  const btnCloseInstallGuide = document.getElementById('btn-close-install-guide');
+  const btnDismissInstallGuide = document.getElementById('btn-dismiss-install-guide');
+
+  // Detect standalone display mode
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+
+  function updatePWAInstallUI(installed) {
+    if (installed) {
+      if (btnNavInstall) {
+        btnNavInstall.classList.add('installed');
+        btnNavInstall.title = 'Veroku is installed';
+        btnNavInstall.innerHTML = '<span class="btn-icon">✅</span><span class="btn-label">Installed</span>';
+        btnNavInstall.hidden = true; // Clean UI: hide from main navigation when already installed
+      }
+      if (btnSettingsInstall) {
+        btnSettingsInstall.style.display = 'none';
+      }
+      if (pwaStatusBadge) {
+        pwaStatusBadge.textContent = 'Installed (Standalone)';
+        pwaStatusBadge.className = 'checklist-badge weekly';
+      }
+      if (pwaStatusDesc) {
+        pwaStatusDesc.textContent = 'Veroku is installed as a standalone application on this device. You can launch it directly from your application menu or home screen.';
+      }
+    } else {
+      if (btnNavInstall) {
+        btnNavInstall.hidden = false;
+      }
+      if (btnSettingsInstall) {
+        btnSettingsInstall.style.display = 'inline-flex';
+      }
+      if (pwaStatusBadge) {
+        pwaStatusBadge.textContent = 'Running in Browser';
+        pwaStatusBadge.className = 'checklist-badge daily';
+      }
+      if (pwaStatusDesc) {
+        pwaStatusDesc.textContent = 'Install Veroku on your phone, tablet, or PC to launch directly from your application menu and use 100% offline with zero load delay.';
+      }
+    }
+  }
+
+  updatePWAInstallUI(isStandalone);
+
+  // Catch the browser beforeinstallprompt event
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    if (!isStandalone) {
+      if (btnNavInstall) btnNavInstall.hidden = false;
+      if (btnSettingsInstall) btnSettingsInstall.style.display = 'inline-flex';
+    }
+  });
+
+  // Action to trigger installation prompt
+  async function triggerPWAInstall() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        showToast('Veroku installed successfully! Added to your application menu.', 'success');
+        updatePWAInstallUI(true);
+      }
+      deferredPrompt = null;
+    } else {
+      // If prompt is not directly available (e.g. iOS Safari, or browser already handled), show guide modal
+      openModal('modal-install-guide');
+    }
+  }
+
+  if (btnNavInstall) {
+    btnNavInstall.addEventListener('click', triggerPWAInstall);
+  }
+  if (btnSettingsInstall) {
+    btnSettingsInstall.addEventListener('click', triggerPWAInstall);
+  }
+  if (btnShowGuide) {
+    btnShowGuide.addEventListener('click', () => {
+      openModal('modal-install-guide');
+    });
+  }
+  if (btnCloseInstallGuide) {
+    btnCloseInstallGuide.addEventListener('click', () => {
+      closeModal();
+    });
+  }
+  if (btnDismissInstallGuide) {
+    btnDismissInstallGuide.addEventListener('click', () => {
+      closeModal();
+    });
+  }
+
+  // Handle native OS installation completion
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    updatePWAInstallUI(true);
+    showToast('Veroku was installed! You can launch it from your app menu.', 'success');
+  });
 });
+

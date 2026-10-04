@@ -1,4 +1,11 @@
-const CACHE_NAME = 'veroku-cache-v56';
+/**
+ * @file sw.js
+ * @category Service
+ * @description Service worker caching engine providing full offline application shell and asset fallback.
+ * @requires CacheStorage, ServiceWorkerGlobalScope
+ */
+
+const CACHE_NAME = 'veroku-cache-v1.5';
 const ASSETS = [
   './',
   './index.html',
@@ -8,12 +15,20 @@ const ASSETS = [
   './js/ui.js',
   './js/app.js',
   './manifest.json',
+  './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png',
+  './icons/favicon-32.png',
   './fonts/dm-sans-400.woff2',
   './fonts/dm-sans-500.woff2',
   './fonts/rajdhani-400.woff2',
   './fonts/rajdhani-600.woff2',
   './fonts/rajdhani-700.woff2'
 ];
+
 
 // Install Event - cache core shell assets
 self.addEventListener('install', (e) => {

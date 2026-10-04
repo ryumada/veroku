@@ -286,18 +286,24 @@ body {
 }
 
 .brand-icon {
-  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
-  border-radius: var(--md-shape-md);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+.brand-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 
 .brand-text {
   flex-grow: 1;
@@ -388,6 +394,72 @@ body {
 .btn-icon {
   font-size: 18px;
 }
+
+/* Install App Navigation & Settings Styles */
+.nav-install-btn {
+  margin-top: 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  color: var(--md-sys-color-primary);
+}
+.nav-install-btn:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: var(--md-sys-color-primary);
+  color: #ffffff;
+  transform: translateX(4px);
+}
+.nav-install-btn.installed {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  pointer-events: none;
+}
+
+/* Settings View PWA Card */
+.pwa-status-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.pwa-icon-preview {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.pwa-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pwa-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pwa-status-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pwa-app-title {
+  font-family: var(--font-brand);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+}
+.pwa-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 
 /* ==========================================================================
    5. MAIN CONTENT AREA & SECTIONS
@@ -775,12 +847,70 @@ body {
   border-top: none;
 }
 
+/* Settings Version Footer */
+.settings-version-footer {
+  margin-top: 24px;
+  padding: 24px 16px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.version-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.version-logo-text {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--md-sys-color-primary);
+}
+
+.version-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--md-shape-full);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.version-details {
+  font-size: 12.5px;
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0;
+}
+
+.version-subdetails {
+  font-size: 11.5px;
+  color: var(--md-sys-color-outline);
+  margin: 0;
+}
+
+.version-subdetails code {
+  font-family: var(--font-mono, monospace);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--md-sys-color-on-surface);
+}
+
 .m3-divider {
   height: 1px;
   background-color: var(--md-sys-color-outline-variant);
   margin: 24px 0;
   border: none;
 }
+
 
 .section-header {
   display: flex;
@@ -3087,6 +3217,12 @@ button[type="submit"]:active,
   .nav-btn.active::before {
     display: none;
   }
+
+  .nav-install-btn {
+    margin-top: 0;
+    padding: 8px 8px;
+  }
+
 
   .app-main {
     padding: 124px 16px 100px 16px;

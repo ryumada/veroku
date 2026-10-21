@@ -13,10 +13,13 @@
   const BACKUP_FILENAME = 'veroku-backup.json';
   const STORAGE_KEY_AUTH = 'veroku_google_sync_auth';
   const STORAGE_KEY_META = 'veroku_google_sync_meta';
+  const STORAGE_KEY_TOKEN = 'veroku_google_sync_token';
 
   let tokenClient = null;
   let activeAccessToken = null;
   let tokenExpiresAt = 0;
+  let currentTokenResolve = null;
+  let currentTokenReject = null;
 
   /**
    * Retrieve saved user session from localStorage
@@ -65,9 +68,57 @@
   }
 
   /**
+   * Retrieve saved OAuth token and expiry from localStorage
+   */
+  function getSavedToken() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_TOKEN);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Save OAuth token and expiry to localStorage
+   */
+  function saveToken(tokenData) {
+    if (tokenData) {
+      localStorage.setItem(STORAGE_KEY_TOKEN, JSON.stringify(tokenData));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_TOKEN);
+    }
+  }
+
+  /**
+   * Invalidate and clear OAuth token from memory and localStorage
+   */
+  function clearToken() {
+    activeAccessToken = null;
+    tokenExpiresAt = 0;
+    saveToken(null);
+  }
+
+  /**
+   * Restore token from localStorage if not expired (with 60-second safety window)
+   */
+  function restoreToken() {
+    const saved = getSavedToken();
+    if (saved && saved.accessToken && saved.expiresAt && Date.now() < (saved.expiresAt - 60000)) {
+      activeAccessToken = saved.accessToken;
+      tokenExpiresAt = saved.expiresAt;
+      return true;
+    }
+    if (saved) {
+      clearToken();
+    }
+    return false;
+  }
+
+  /**
    * Initialize Google Token Client via Google Identity Services
    */
-  function initClient(onSuccessCallback, onErrorCallback) {
+  function initClient() {
     if (typeof window.google === 'undefined' || !window.google.accounts || !window.google.accounts.oauth2) {
       console.warn('Google Identity Services library not yet loaded.');
       return false;
@@ -78,27 +129,38 @@
         client_id: GOOGLE_CLIENT_ID,
         scope: SCOPES,
         callback: async (tokenResponse) => {
+          const resolve = currentTokenResolve;
+          const reject = currentTokenReject;
+          currentTokenResolve = null;
+          currentTokenReject = null;
+
           if (tokenResponse && tokenResponse.access_token) {
             activeAccessToken = tokenResponse.access_token;
             // Token expires in expiresIn seconds (default 3599)
             tokenExpiresAt = Date.now() + ((tokenResponse.expires_in || 3600) * 1000);
+            saveToken({ accessToken: activeAccessToken, expiresAt: tokenExpiresAt });
 
             try {
               const userInfo = await fetchUserProfile(activeAccessToken);
               saveUser(userInfo);
-              if (onSuccessCallback) onSuccessCallback(userInfo, activeAccessToken);
+              if (resolve) resolve(activeAccessToken);
             } catch (err) {
               console.error('Failed to fetch user profile:', err);
-              if (onErrorCallback) onErrorCallback(err);
+              if (reject) reject(err);
             }
           } else if (tokenResponse && tokenResponse.error) {
             console.error('Google Auth Error:', tokenResponse);
-            if (onErrorCallback) onErrorCallback(tokenResponse.error);
+            if (reject) reject(new Error(tokenResponse.error_description || tokenResponse.error));
           }
         },
         error_callback: (err) => {
           console.error('GIS Error:', err);
-          if (onErrorCallback) onErrorCallback(err);
+          if (currentTokenReject) {
+            const reject = currentTokenReject;
+            currentTokenResolve = null;
+            currentTokenReject = null;
+            reject(err);
+          }
         }
       });
     }
@@ -107,22 +169,35 @@
   }
 
   /**
-   * Request OAuth token via interactive popup
+   * Request OAuth token via interactive popup or silent reuse
    */
   function requestToken(promptMode = '') {
     return new Promise((resolve, reject) => {
-      // Check if we have an active unexpired token
+      // Check if we can restore from storage or if active token is valid
+      if (!activeAccessToken) {
+        restoreToken();
+      }
+
       if (activeAccessToken && Date.now() < tokenExpiresAt - 60000) {
         resolve(activeAccessToken);
         return;
       }
 
-      if (!initClient((user, token) => resolve(token), (err) => reject(err))) {
+      if (!initClient()) {
         reject(new Error('Google Identity Services library is not loaded. Check internet connection.'));
         return;
       }
 
-      tokenClient.requestAccessToken({ prompt: promptMode });
+      currentTokenResolve = resolve;
+      currentTokenReject = reject;
+
+      const requestConfig = { prompt: promptMode };
+      const savedUser = getSavedUser();
+      if (savedUser && savedUser.email) {
+        requestConfig.hint = savedUser.email;
+      }
+
+      tokenClient.requestAccessToken(requestConfig);
     });
   }
 
@@ -133,6 +208,9 @@
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${token}` }
     });
+    if (res.status === 401) {
+      clearToken();
+    }
     if (!res.ok) throw new Error('Could not fetch user profile from Google');
     return await res.json();
   }
@@ -147,6 +225,10 @@
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    if (res.status === 401) {
+      clearToken();
+    }
 
     if (!res.ok) {
       const errText = await res.text();
@@ -181,6 +263,10 @@
         body: jsonString
       });
 
+      if (res.status === 401) {
+        clearToken();
+      }
+
       if (!res.ok) throw new Error(`Failed to update cloud backup (${res.status})`);
       result = await res.json();
     } else {
@@ -214,6 +300,10 @@
         body: multipartBody
       });
 
+      if (res.status === 401) {
+        clearToken();
+      }
+
       if (!res.ok) throw new Error(`Failed to create cloud backup (${res.status})`);
       result = await res.json();
     }
@@ -242,6 +332,10 @@
     const res = await fetch(downloadUrl, {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    if (res.status === 401) {
+      clearToken();
+    }
 
     if (!res.ok) throw new Error(`Failed to download cloud backup (${res.status})`);
     const parsed = await res.json();
@@ -272,16 +366,19 @@
         console.warn('Token revocation skipped:', err);
       }
     }
-    activeAccessToken = null;
-    tokenExpiresAt = 0;
+    clearToken();
     saveUser(null);
     saveCloudMeta(null);
   }
+
+  // Restore persisted session token on startup if still valid
+  restoreToken();
 
   // Public VerokuSync API
   window.VerokuSync = {
     getSavedUser,
     getCloudMeta,
+    getSavedToken,
     signIn: () => requestToken('select_account'),
     uploadBackup,
     downloadBackup,

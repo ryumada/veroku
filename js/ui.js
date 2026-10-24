@@ -52,7 +52,7 @@ function matchesServiceQuery(service, query) {
 /**
  * Display toast notification.
  * @param {string} message
- * @param {'success'|'error'} type
+ * @param {'success'|'error'|'info'|'warning'} type
  */
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
@@ -61,7 +61,13 @@ function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
 
-  const icon = type === 'success' ? '✅' : '❌';
+  const iconMap = {
+    success: '✅',
+    info: 'ℹ️',
+    warning: '⚠️',
+    error: '❌'
+  };
+  const icon = iconMap[type] || '❌';
   toast.innerHTML = `<span>${icon}</span> <span style="flex-grow: 1;">${message}</span> <span style="cursor: pointer; opacity: 0.7; font-size: 15px; margin-left: 8px;" title="Dismiss">&times;</span>`;
 
   const dismiss = () => {

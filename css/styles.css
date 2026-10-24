@@ -3165,6 +3165,12 @@ button[type="submit"]:active,
 .toast-success {
   border-left: 4px solid var(--status-optimal);
 }
+.toast-info {
+  border-left: 4px solid var(--md-sys-color-primary);
+}
+.toast-warning {
+  border-left: 4px solid var(--status-warning);
+}
 .toast-error {
   border-left: 4px solid var(--status-critical);
 }

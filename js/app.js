@@ -2557,6 +2557,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.VerokuNotifications) {
     window.VerokuNotifications.checkAndDispatchAlerts(state);
   }
+
+  // Date and Time picker click-to-open UX helper
+  document.addEventListener('click', (e) => {
+    const dateInput = e.target.closest('input[type="date"], input[type="time"]');
+    if (dateInput && typeof dateInput.showPicker === 'function') {
+      try {
+        dateInput.showPicker();
+      } catch (err) {
+        // Fallback for browsers or contexts where showPicker is blocked
+      }
+    }
+  });
 });
 
 
